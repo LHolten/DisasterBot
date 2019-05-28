@@ -3,18 +3,18 @@ import math
 from action.base_action import BaseAction
 from rlbot.agents.base_agent import SimpleControllerState
 
-from RLUtilities.GameInfo import GameInfo
-from RLUtilities.LinearAlgebra import dot, norm
+from rlutilities.simulation import Game
+from rlutilities.linear_algebra import dot, norm
 
 
 class Kickoff(BaseAction):
 
-    def get_output(self, info: GameInfo) -> SimpleControllerState:
+    def get_output(self, info: Game) -> SimpleControllerState:
 
         ball = info.ball
         car = info.my_car
 
-        local_coords = dot(ball.pos - car.pos, car.theta)
+        local_coords = dot(ball.location - car.location, car.rotation)
 
         self.controls.steer = math.copysign(1.0, local_coords[1])
 
@@ -23,14 +23,14 @@ class Kickoff(BaseAction):
 
         return self.controls
 
-    def get_possible(self, info: GameInfo):
+    def get_possible(self, info: Game):
         return True
 
-    def update_status(self, info: GameInfo):
+    def update_status(self, info: Game):
 
-        if norm(info.ball.pos) > 140 and norm(info.ball.vel) > 9:  # this only works for soccar
+        if norm(info.ball.location) > 140 and norm(info.ball.location) > 9:  # this only works for soccar
 
-            if norm(info.ball.pos - info.my_car.pos) < 240:
+            if norm(info.ball.location - info.my_car.location) < 240:
                 self.finished = True
             else:
                 self.failed = True
