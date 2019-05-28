@@ -1,5 +1,5 @@
 from rlbot.agents.base_agent import SimpleControllerState
-from RLUtilities.GameInfo import GameInfo
+from rlutilities.simulation import Game
 
 
 class BaseAction:
@@ -10,13 +10,13 @@ class BaseAction:
         self.finished = False
         self.failed = False
 
-    def get_output(self, info: GameInfo) -> SimpleControllerState:
+    def get_output(self, info: Game) -> SimpleControllerState:
         raise NotImplementedError
 
-    def get_possible(self, info: GameInfo) -> bool:
+    def get_possible(self, info: Game) -> bool:
         raise NotImplementedError
 
-    def update_status(self, info: GameInfo) -> bool:
+    def update_status(self, info: Game) -> bool:
         raise NotImplementedError
 
     def reset_status(self):

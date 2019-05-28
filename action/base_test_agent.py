@@ -15,6 +15,7 @@ class BaseTestAgent(BaseAgent):
         self.info.read_game_information(game_tick_packet,
                                         self.get_rigid_body_tick(),
                                         self.get_field_info())
+        self.action.update_status(self.info)
         self.test_process(game_tick_packet)
         return self.action.get_output(self.info)
 
@@ -22,7 +23,7 @@ class BaseTestAgent(BaseAgent):
         raise NotImplementedError
 
     def test_process(self, game_tick_packet: GameTickPacket):
-        raise NotImplementedError
+        pass
 
     def initialize_agent(self):
-        raise NotImplementedError
+        pass

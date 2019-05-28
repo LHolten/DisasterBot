@@ -1,38 +1,17 @@
+import sys
 from pathlib import Path
 from typing import Optional
 
 import math
-from rlbot.matchcomms.client import MatchcommsClient
-from rlbot.training.training import Grade, Pass
+from rlbot.training.training import Grade
 from rlbot.utils.game_state_util import GameState, BallState, Physics, Rotator, Vector3, CarState
 from rlbottraining import exercise_runner
-from rlbottraining.grading.grader import Grader
-from rlbottraining.grading.training_tick_packet import TrainingTickPacket
 from rlbottraining.match_configs import make_match_config_with_bots
 from rlbottraining.rng import SeededRandomNumberGenerator
 from rlbottraining.training_exercise import TrainingExercise
 
 
-class MatchcommsGrader(Grader):
-    matchcomms: MatchcommsClient = None
-    initialized = False
-
-    def on_tick(self, tick: TrainingTickPacket) -> Optional[Grade]:
-        assert self.matchcomms
-
-        if not self.initialized:
-            self.matchcomms.outgoing_broadcast.put_nowait('start')
-
-        if not self.matchcomms.incoming_broadcast.empty():
-            print(self.matchcomms.incoming_broadcast.get_nowait())
-            return Pass()
-
-        return None
-
-
 class RotationExercise(TrainingExercise):
-    grader: MatchcommsGrader
-
     def on_briefing(self) -> Optional[Grade]:
         self.grader.matchcomms = self.get_matchcomms()
         return None
@@ -52,8 +31,11 @@ class RotationExercise(TrainingExercise):
 
 if __name__ == '__main__':
     current_path = Path(__file__).absolute().parent
+    sys.path.insert(0, str(current_path.parent.parent))  # this is for first process imports
 
-    match_config = make_match_config_with_bots(blue_bots=[current_path / 'test_agent.cfg'])
+    from common_graders.matchcomms_grader import MatchcommsGrader
+
+    match_config = make_match_config_with_bots(blue_bots=[current_path / 'face_vector_agent.cfg'])
     exercise = RotationExercise(name='rotate to target', grader=MatchcommsGrader(), match_config=match_config)
 
     print(next(exercise_runner.run_playlist([exercise])))
