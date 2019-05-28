@@ -1,4 +1,4 @@
-from RLUtilities.LinearAlgebra import vec3, norm
+from rlutilities.linear_algebra import vec3, norm
 import math
 
 PI = math.pi
