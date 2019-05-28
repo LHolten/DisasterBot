@@ -17,23 +17,18 @@ class RotationExercise(TrainingExercise):
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
-        m = 1
-        f = rng.choice([-1, 1])
+        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-4000, 4000), 18)
+        random_velocity = Vector3(rng.uniform(-1000, 1000), rng.uniform(-1000, 1000), 0)
+        random_rotation = Rotator(0, rng.uniform(-math.pi, math.pi), 0)
 
-        car_physics = Physics(velocity=Vector3(0, 0, 0),
-                              rotation=Rotator(0, (45 + m * 90) / 180 * math.pi, 0),
-                              angular_velocity=Vector3(0, 0, 0),
-                              location=Vector3(f * m * 2048, m * -2560, 17.148628))
+        car_physics = Physics(location=random_position, velocity=random_velocity, rotation=random_rotation,
+                              angular_velocity=Vector3(0, 0, 0))
 
-        ball_physics = Physics(location=Vector3(0, 0, 92.739998),
-                               velocity=Vector3(0, 0, 0),
-                               angular_velocity=Vector3(0, 0, 0))
+        boost = rng.uniform(0, 50)
 
-        car_state = CarState(jumped=False, double_jumped=False, boost_amount=34, physics=car_physics)
+        car_state = CarState(boost_amount=boost, physics=car_physics)
 
-        ball_state = BallState(physics=ball_physics)
-
-        return GameState(ball=ball_state, cars={0: car_state})
+        return GameState(cars={0: car_state})
 
 
 if __name__ == '__main__':
@@ -42,7 +37,7 @@ if __name__ == '__main__':
 
     from common_graders.matchcomms_grader import MatchcommsGrader
 
-    match_config = make_match_config_with_bots(blue_bots=[current_path / 'kickoff_agent.cfg'])
-    exercise = RotationExercise(name='kickoff', grader=MatchcommsGrader(), match_config=match_config)
+    match_config = make_match_config_with_bots(blue_bots=[current_path / 'collect_boost_agent.cfg'])
+    exercise = RotationExercise(name='collect boost', grader=MatchcommsGrader(), match_config=match_config)
 
     print(next(exercise_runner.run_playlist([exercise])))

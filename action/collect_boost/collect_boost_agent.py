@@ -1,7 +1,7 @@
 from action.base_test_agent import BaseTestAgent
-from action.kickoff.kickoff import Kickoff
+from action.collect_boost.collect_boost import CollectBoost
 
 
 class TestAgent(BaseTestAgent):
     def create_action(self):
-        return Kickoff(self.renderer)
+        return CollectBoost(self.renderer)

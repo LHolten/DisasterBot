@@ -10,6 +10,7 @@ class BaseTestAgent(BaseAgent):
         super(BaseTestAgent, self).__init__(name, team, index)
         self.info = Game(index, team)
         self.action = self.create_action()
+        self.initialized = False
 
     def get_output(self, game_tick_packet: GameTickPacket) -> SimpleControllerState:
         self.info.read_game_information(game_tick_packet,
@@ -23,7 +24,13 @@ class BaseTestAgent(BaseAgent):
         raise NotImplementedError
 
     def test_process(self, game_tick_packet: GameTickPacket):
-        pass
+        if not self.initialized and not self.matchcomms.incoming_broadcast.empty():
+            self.matchcomms.incoming_broadcast.get_nowait()
+            self.initialized = True
 
-    def initialize_agent(self):
-        pass
+        if self.initialized:
+            self.action.update_status(self.info)
+
+        if self.initialized and self.action.finished:
+            self.matchcomms.outgoing_broadcast.put_nowait('done')
+            self.initialized = False
