@@ -1,3 +1,4 @@
+import random
 import sys
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,7 @@ class RotationExercise(TrainingExercise):
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
+        rng = random
         car_physics = Physics()
         car_physics.rotation = Rotator(rng.uniform(-math.pi / 2, math.pi / 2),
                                        rng.uniform(-math.pi, math.pi), rng.uniform(-math.pi, math.pi))
@@ -36,6 +38,8 @@ if __name__ == '__main__':
     from common_graders.matchcomms_grader import MatchcommsGrader
 
     match_config = make_match_config_with_bots(blue_bots=[current_path / 'simulation_agent.cfg'])
-    exercise = RotationExercise(name='simulate rotation', grader=MatchcommsGrader(), match_config=match_config)
 
-    print(next(exercise_runner.run_playlist([exercise])))
+    exercises = [RotationExercise(name='simulate rotation', grader=MatchcommsGrader(), match_config=match_config)
+                 for _ in range(100)]
+
+    print(list(exercise_runner.run_playlist(exercises)))
