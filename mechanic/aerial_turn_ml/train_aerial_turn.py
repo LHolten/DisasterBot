@@ -3,11 +3,9 @@ from pathlib import Path
 
 import torch
 from quicktracer import trace
-from torch.optim.adam import Adam
+from torch.optim.adadelta import Adadelta
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-identity = torch.diag(torch.ones(3))[None, :, :].to(device)
 
 
 class Trainer:
@@ -18,7 +16,7 @@ class Trainer:
         self.policy = Policy().to(device)
         # self.policy.load_state_dict(torch.load('policy.mdl'))
         self.simulation = Simulation(self.policy)
-        self.optimizer = Adam(self.policy.parameters())
+        self.optimizer = Adadelta(self.policy.parameters())
         # self.optimizer.load_state_dict(torch.load('optimizer.state'))
 
     def train(self):
@@ -37,7 +35,7 @@ class Trainer:
         for i in range(90):
             self.simulation.step(1 / 30)
 
-            loss += angle_between(self.simulation.o, identity)
+            loss += self.simulation.error()
 
         self.optimizer.zero_grad()
         loss.mean().backward()
@@ -45,15 +43,11 @@ class Trainer:
         trace(loss.mean().item())
 
 
-def angle_between(u: torch.Tensor, v: torch.Tensor):
-    mask = torch.diag(torch.ones(3)).byte().to(device)
-    meps = 1 - 1e-5
-    return torch.acos(meps * 0.5 * (torch.sum(torch.sum(u[:, :, None, :] * v[:, None, :, :], 3)[:, mask], 1) - 1.0))
-
-
 if __name__ == '__main__':
     current_path = Path(__file__).absolute().parent
     sys.path.insert(0, str(current_path.parent.parent))  # this is for first process imports
+
+    torch.autograd.set_detect_anomaly(True)
 
     trainer = Trainer()
     trainer.train()

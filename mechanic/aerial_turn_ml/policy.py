@@ -20,12 +20,12 @@ class Policy(Module):
         super().__init__()
         self.actor = Actor()
         self.softsign = Softsign()
-        self.symmetry = False
+        self.symmetry = True
 
     def forward(self, o: Tensor, w: Tensor):
         if self.symmetry:
-            o = o.repeat(1, 8, 1, 1)
-            w = w.repeat(1, 8, 1)
+            o = o[:, None, :, :].repeat(1, 8, 1, 1)
+            w = w[:, None, :].repeat(1, 8, 1)
 
             o[:, 0:4, :, 0] = o[:, 0:4, :, 0].neg()
             o[:, 0:2, :, 1] = o[:, 0:2, :, 1].neg()
@@ -49,7 +49,7 @@ class Policy(Module):
             rpy[:, 4:6, [0, 2]] = rpy[:, 4:6, [0, 2]].neg()
             rpy[:, ::2, [0, 1]] = rpy[:, ::2, [0, 1]].neg()
 
-            return self.softsign(torch.mean(rpy, 1))
+            return self.softsign(rpy[:, 7])
 
         else:
             rpy: Tensor = self.actor(o, w)

@@ -12,9 +12,12 @@ j = 10.5
 # air control torque coefficients
 t = torch.tensor([-400.0, -130.0, 95.0], dtype=torch.float, device=device)
 m = torch.diag(torch.ones(3)).byte().to(device)
+identity = torch.diag(torch.ones(3))[None, :, :].to(device)
+
 
 w_max = 5.5
 batch_size = 8000
+meps = 1 - 1e-5
 
 
 class Simulation:
@@ -25,22 +28,25 @@ class Simulation:
         self.policy = policy
 
     def random_state(self):
-        self.o = Normal(0, 1).sample((batch_size, 3, 3)).to(device)
+        x_axis = Normal(0, 1).sample((batch_size, 3)).to(device)
+        y_axis = Normal(0, 1).sample((batch_size, 3)).to(device)
+        z_axis = torch.cross(x_axis, y_axis, dim=1)
+        y_axis = torch.cross(z_axis, x_axis, dim=1)
+        self.o = torch.stack((x_axis, y_axis, z_axis), dim=1)
+        self.o = self.o / torch.norm(self.o, dim=2, keepdim=True)
         self.w = torch.zeros((batch_size, 3), device=device)
-
-        self.normalize()
 
     def simulate(self, steps: int, dt: float):
         for _ in range(steps):
             self.step(dt)
 
-    def normalize(self):
-        self.o = self.o / self.o.norm(dim=2, keepdim=True)
-        self.o[:, 2] = torch.cross(self.o[:, 0], self.o[:, 1], dim=1)
-        self.o[:, 1] = torch.cross(self.o[:, 2], self.o[:, 0], dim=1)
+    def w_local(self):
+        return torch.sum(self.o * self.w[:, :, None], 1)
 
     def step(self, dt):
-        rpy = self.policy(self.o, self.w)
+        w_local = self.w_local()
+
+        rpy = self.policy(self.o.permute(0, 2, 1), w_local)
 
         # air damping torque coefficients
         h = torch.stack((
@@ -49,13 +55,14 @@ class Simulation:
             -20.0 * (1.0 - rpy[:, 2].abs())
         ), dim=1)
 
-        w_local = torch.sum(self.o * self.w[:, :, None], 1)
         self.w = self.w + torch.sum(self.o * (t[None, :] * rpy + h * w_local)[:, None, :], 2) * (dt / j)
         self.o = torch.sum(self.o[:, None, :, :] * axis_to_rotation(self.w * dt)[:, :, :, None], 2)
 
         self.w = self.w / torch.clamp_min(torch.norm(self.w, dim=1) / w_max, 1)[:, None]
 
-        # self.normalize()
+    def error(self):
+        return torch.acos(meps * 0.5 * (torch.sum(torch.sum(self.o[:, :, None, :] *
+                                                            identity[:, None, :, :], 3)[:, m], 1) - 1.0))
 
 
 def axis_to_rotation(omega: Tensor):
@@ -68,7 +75,8 @@ def axis_to_rotation(omega: Tensor):
 
     result = u[:, :, None] * u[:, None, :] * (-c[:, None, None] + 1.0)
     result += c[:, None, None] * torch.diag(torch.ones(3, device=device))[None, :, :]
-    result[:, torch.cat((m[-1:], m[:-1]))] += torch.cat((u[:, 1:], u[:, :1]), 1) * s[:, None]
-    result[:, torch.cat((m[1:], m[:1]))] -= torch.cat((u[:, -1:], u[:, :-1]), 1) * s[:, None]
+
+    result += torch.cross(s[:, None, None] * torch.diag(torch.ones(3, device=device))[None, :, :],
+                          u[:, None, :].repeat(1, 3, 1), dim=2)
 
     return result
