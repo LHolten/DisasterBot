@@ -30,12 +30,15 @@ class Trainer:
 
     def episode(self):
         self.simulation.random_state()
-        loss = torch.zeros(self.simulation.o.shape[0], device=device)
+        loss = torch.zeros((self.simulation.o.shape[0], 90), device=device)
 
         for i in range(90):
             self.simulation.step(1 / 30)
 
-            loss += self.simulation.error()
+            loss[:, i] = self.simulation.error()
+
+        for i in range(1, 90):
+            loss[:, 89 - i] = torch.max(loss[:, 89 - i:90 - i], dim=1)[0]
 
         self.optimizer.zero_grad()
         loss.mean().backward()

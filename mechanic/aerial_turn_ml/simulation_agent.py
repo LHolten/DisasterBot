@@ -15,6 +15,8 @@ class TestAgent(BaseTestAgent):
         if not self.game_state and not self.matchcomms.incoming_broadcast.empty():
             self.matchcomms.incoming_broadcast.get_nowait()
             self.game_state = GameState.create_from_gametickpacket(game_tick_packet)
+            self.game_state.cars[self.index].jumped = None
+            self.game_state.cars[self.index].double_jumped = None
             self.game_state.cars[self.index].physics.rotation = None
             self.game_state.cars[self.index].physics.angular_velocity = None
             self.game_state.cars[self.index].physics.velocity.z = 10
