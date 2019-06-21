@@ -20,14 +20,13 @@ class RotationExercise(TrainingExercise):
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
         rng = random
         car_physics = Physics()
-        car_physics.rotation = Rotator(rng.uniform(-math.pi / 2, math.pi / 2),
+        car_physics.rotation = Rotator(math.sinh(rng.uniform(-1, 1)),
                                        rng.uniform(-math.pi, math.pi), rng.uniform(-math.pi, math.pi))
         car_physics.location = Vector3(0, 0, 800)
 
-        # velocity = (rng.normalvariate(0, 1) for _ in range(3))
-        # norm = sum(x ** 2 for x in velocity) ** 0.5
-        # car_physics.angular_velocity = Vector3(*(x / norm * 5.5 for x in velocity))
-        car_physics.angular_velocity = Vector3(0, 0, 0)
+        velocity = (rng.normalvariate(0, 1) for _ in range(3))
+        norm = sum(x ** 2 for x in velocity) ** 0.5
+        car_physics.angular_velocity = Vector3(*(x / norm * 5.5 for x in velocity))
 
         ball_state = BallState(physics=Physics(velocity=Vector3(0, 0, 20), location=Vector3(500, 0, 800)))
 

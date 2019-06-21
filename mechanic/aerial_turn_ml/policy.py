@@ -1,14 +1,14 @@
 import torch
 from torch import Tensor
-from torch.nn import Module, Linear, Softsign
+from torch.nn import Module, Linear, ReLU
 
 
 class Actor(Module):
-    def __init__(self):
+    def __init__(self, hidden_size):
         super().__init__()
-        self.linear1 = Linear(12, 10)
-        self.linear2 = Linear(10, 3)
-        self.softsign = Softsign()
+        self.linear1 = Linear(12, hidden_size)
+        self.linear2 = Linear(hidden_size, 3)
+        self.softsign = ReLU()
 
     def forward(self, o: Tensor, w: Tensor):
         flat_data = torch.cat((o.flatten(1, 2), w), 1)
@@ -16,10 +16,9 @@ class Actor(Module):
 
 
 class Policy(Module):
-    def __init__(self):
+    def __init__(self, hidden_size):
         super().__init__()
-        self.actor = Actor()
-        self.softsign = Softsign()
+        self.actor = Actor(hidden_size)
         self.symmetry = True
 
     def forward(self, o: Tensor, w: Tensor):
@@ -49,9 +48,9 @@ class Policy(Module):
             rpy[:, 4:6, [0, 2]] = rpy[:, 4:6, [0, 2]].neg()
             rpy[:, ::2, [0, 1]] = rpy[:, ::2, [0, 1]].neg()
 
-            return self.softsign(rpy[:, 7])
+            return torch.clamp(rpy.mean(1), -1, 1)
 
         else:
             rpy: Tensor = self.actor(o, w)
 
-            return self.softsign(rpy)
+            return torch.clamp(rpy, -1, 1)

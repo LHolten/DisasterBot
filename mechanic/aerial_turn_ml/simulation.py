@@ -16,7 +16,7 @@ identity = torch.diag(torch.ones(3))[None, :, :].to(device)
 
 
 w_max = 5.5
-batch_size = 8000
+batch_size = 10000
 meps = 1 - 1e-5
 
 
@@ -34,7 +34,10 @@ class Simulation:
         y_axis = torch.cross(z_axis, x_axis, dim=1)
         self.o = torch.stack((x_axis, y_axis, z_axis), dim=1)
         self.o = self.o / torch.norm(self.o, dim=2, keepdim=True)
-        self.w = torch.zeros((batch_size, 3), device=device)
+
+        self.w = Normal(0, 1).sample((batch_size, 3)).to(device)
+        self.w = self.w / torch.norm(self.w, dim=1, keepdim=True)
+        self.w = self.w * torch.rand((batch_size, 1), device=device) * w_max
 
     def simulate(self, steps: int, dt: float):
         for _ in range(steps):

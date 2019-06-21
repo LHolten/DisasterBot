@@ -12,6 +12,8 @@ class TestAgent(BaseTestAgent):
         return AerialTurnML()
 
     def test_process(self, game_tick_packet: GameTickPacket):
+        run = False
+
         if not self.game_state and not self.matchcomms.incoming_broadcast.empty():
             self.matchcomms.incoming_broadcast.get_nowait()
             self.game_state = GameState.create_from_gametickpacket(game_tick_packet)
@@ -24,10 +26,13 @@ class TestAgent(BaseTestAgent):
 
         if self.game_state:
             self.set_game_state(self.game_state)
+            run = True
 
         if self.game_state and self.mechanic.finished:
             self.matchcomms.outgoing_broadcast.put_nowait('done')
             self.game_state = None
+
+        return run
 
     def get_mechanic_controls(self):
         return self.mechanic.step(self.info)

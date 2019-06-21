@@ -15,8 +15,10 @@ class BaseTestAgent(BaseAgent):
         self.info.read_game_information(game_tick_packet,
                                         self.get_rigid_body_tick(),
                                         self.get_field_info())
-        self.test_process(game_tick_packet)
-        return self.get_mechanic_controls()
+        if self.test_process(game_tick_packet):
+            return self.get_mechanic_controls()
+        else:
+            return SimpleControllerState()
 
     def create_mechanic(self) -> BaseMechanic:
         raise NotImplementedError
@@ -24,7 +26,7 @@ class BaseTestAgent(BaseAgent):
     def get_mechanic_controls(self) -> SimpleControllerState:
         raise NotImplementedError
 
-    def test_process(self, game_tick_packet: GameTickPacket):
+    def test_process(self, game_tick_packet: GameTickPacket) -> bool:
         pass
 
     def initialize_agent(self):

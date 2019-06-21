@@ -9,16 +9,19 @@ from mechanic.base_mechanic import BaseMechanic
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 identity = torch.diag(torch.ones(3))[None, :, :].to(device)
+hidden_size = 20
+model_name = f'full_rotation_{hidden_size}'
 
 
 class AerialTurnML(BaseMechanic):
-    predicted_o: torch.Tensor = None
-    predicted_w: torch.Tensor = None
+    # predicted_o: torch.Tensor = None
+    # predicted_w: torch.Tensor = None
+    frames_done = 0
 
     def __init__(self):
         super().__init__()
-        self.policy = Policy().to(device)
-        self.policy.load_state_dict(torch.load('policy.mdl'))
+        self.policy = Policy(hidden_size).to(device)
+        self.policy.load_state_dict(torch.load(model_name + '.mdl'))
         self.simulation = Simulation(self.policy)
 
     def step(self, info: Game) -> SimpleControllerState:
@@ -35,10 +38,12 @@ class AerialTurnML(BaseMechanic):
         rpy = self.policy(self.simulation.o.permute(0, 2, 1), self.simulation.w_local())[0]
         self.controls.roll, self.controls.pitch, self.controls.yaw = rpy
 
-        if self.simulation.error()[0].item() < 0.1 and w.norm().item() < 0.1:
+        if self.simulation.error()[0].item() < 0.1:
+            self.frames_done += 1
+        else:
+            self.frames_done = 0
+
+        if self.frames_done >= 1:
             self.finished = True
 
         return self.controls
-
-
-
