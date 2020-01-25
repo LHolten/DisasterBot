@@ -51,19 +51,18 @@ _The guidelines are WIP._
 ### Project structure
 _The project structure is WIP._
 
-* One configuration file to run the bot.
-* One "action" folder that contains the actions. (see the decription below)
-* One "policy" folder that contains the algorithm that choses between the states
+* One configuration file to run the bot. 
+* One "mechanic" folder that contains the mechanics. (see the decription below)
+* One "action" folder that contains the actions.
+* One "policy" folder that contains the algorithm that choses between the states.
 * One "utils" folder that contains tools used by the bot.
 
-#### Action folder
-* One folder for each action that contains:
-  * Two configuration files (test_agent.cgf and rlbot.cfg)
-  * One python file that contains a bot to test the action
-  * One python file that contains the action
-  * One run.bat or run.py to test the action
-
-
+#### Mechanic & Action folders
+* One folder for each mechanic/action that contains:
+  * One python file that contains the action.
+  * One python file that contains a test agent that uses the action.
+  * One python file that contains a rlbottraining exercise playlist.
+  
 
 ## Definition of concepts
 
