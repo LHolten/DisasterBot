@@ -4,4 +4,4 @@ from action.collect_boost.collect_boost import CollectBoost
 
 class TestAgent(BaseTestAgent):
     def create_action(self):
-        return CollectBoost(self.renderer)
+        return CollectBoost(self)

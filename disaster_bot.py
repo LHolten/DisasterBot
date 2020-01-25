@@ -1,12 +1,16 @@
-from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
-from rlbot.utils.structures.game_data_struct import GameTickPacket
+from skeleton import SkeletonAgent
+from policy.example_policy.example_policy import ExamplePolicy
 
 
-class DisasterBot(BaseAgent):
+class DisasterBot(SkeletonAgent):
 
-    def initialize_agent(self):
-        self.controls = SimpleControllerState()
+    def __init__(self, name, team, index):
+        super(DisasterBot, self).__init__(name, team, index)
+        self.policy = ExamplePolicy(self)
 
-    def get_output(self, packet: GameTickPacket) -> SimpleControllerState:
+    def get_controls(self):
 
-        return self.controls
+        action = self.policy.get_action(self.game_data)
+        controls = action.get_controls(self.game_data)
+
+        return controls

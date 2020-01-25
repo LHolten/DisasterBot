@@ -1,36 +1,34 @@
 import math
-
-from action.base_action import BaseAction
 from rlbot.agents.base_agent import SimpleControllerState
+from action.base_action import BaseAction
 
-from rlutilities.simulation import Game
-from rlutilities.linear_algebra import dot, norm
+from mechanic.drive import DriveTurnToFaceTarget
 
 
 class Kickoff(BaseAction):
 
-    def get_output(self, info: Game) -> SimpleControllerState:
+    def __init__(self, agent):
+        super(Kickoff, self).__init__(agent)
+        self.mechanic = None
 
-        ball = info.ball
-        car = info.my_car
+    def get_controls(self, game_data) -> SimpleControllerState:
 
-        local_coords = dot(ball.location - car.location, car.rotation)
+        if not self.mechanic:
+            self.mechanic = DriveTurnToFaceTarget(self.agent)
 
-        self.controls.steer = math.copysign(1.0, local_coords[1])
-
-        # just set the throttle to 1 so the car is always moving forward
-        self.controls.throttle = 1.0
+        self.mechanic.step(game_data.my_car, game_data.ball.location)
+        self.controls = self.mechanic.controls
 
         return self.controls
 
-    def get_possible(self, info: Game):
+    def get_possible(self, game_data):
         return True
 
-    def update_status(self, info: Game):
+    def update_status(self, game_data):
+        ball_loc = game_data.ball.location
+        kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 140
 
-        if norm(info.ball.location) > 140 and norm(info.ball.location) > 9:  # this only works for soccar
-
-            if norm(info.ball.location - info.my_car.location) < 240:
-                self.finished = True
-            else:
-                self.failed = True
+        if not kickoff:
+            self.finished = True
+        else:
+            self.finished = False

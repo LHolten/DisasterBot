@@ -4,4 +4,4 @@ from action.kickoff.kickoff import Kickoff
 
 class TestAgent(BaseTestAgent):
     def create_action(self):
-        return Kickoff(self.renderer)
+        return Kickoff(self)

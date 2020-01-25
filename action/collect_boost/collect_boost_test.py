@@ -4,7 +4,7 @@ from typing import Optional
 
 import math
 from rlbot.training.training import Grade
-from rlbot.utils.game_state_util import GameState, BallState, Physics, Rotator, Vector3, CarState
+from rlbot.utils.game_state_util import GameState, Physics, Rotator, Vector3, CarState
 from rlbottraining import exercise_runner
 from rlbottraining.match_configs import make_match_config_with_bots
 from rlbottraining.rng import SeededRandomNumberGenerator
@@ -21,8 +21,8 @@ class RotationExercise(TrainingExercise):
         random_velocity = Vector3(rng.uniform(-1000, 1000), rng.uniform(-1000, 1000), 0)
         random_rotation = Rotator(0, rng.uniform(-math.pi, math.pi), 0)
 
-        car_physics = Physics(location=random_position, velocity=random_velocity, rotation=random_rotation,
-                              angular_velocity=Vector3(0, 0, 0))
+        car_physics = Physics(location=random_position, velocity=random_velocity,
+                              rotation=random_rotation, angular_velocity=Vector3(0, 0, 0))
 
         boost = rng.uniform(0, 50)
 
@@ -31,13 +31,19 @@ class RotationExercise(TrainingExercise):
         return GameState(cars={0: car_state})
 
 
-if __name__ == '__main__':
-    current_path = Path(__file__).absolute().parent
-    sys.path.insert(0, str(current_path.parent.parent))  # this is for first process imports
+# this is for first process imports
+current_path = Path(__file__).absolute().parent
+sys.path.insert(0, str(current_path.parent.parent))
 
-    from common_graders.matchcomms_grader import MatchcommsGrader
+from util.matchcomms_grader import MatchcommsGrader
 
+
+def make_default_playlist():
     match_config = make_match_config_with_bots(blue_bots=[current_path / 'collect_boost_agent.cfg'])
-    exercise = RotationExercise(name='collect boost', grader=MatchcommsGrader(), match_config=match_config)
+    exercise = RotationExercise(name='collect boost', grader=MatchcommsGrader(),
+                                match_config=match_config)
+    return [exercise]
 
-    print(next(exercise_runner.run_playlist([exercise])))
+
+if __name__ == '__main__':
+    exercise_runner.run_module(Path(__file__).absolute())

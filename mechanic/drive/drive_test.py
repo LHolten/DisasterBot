@@ -17,21 +17,21 @@ class RotationExercise(TrainingExercise):
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
-        t = rng.choice([-1, 1])
-        f = rng.choice([-1, 1])
+        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-4000, 4000), 18)
+        random_velocity = Vector3(rng.uniform(-1000, 1000), rng.uniform(-1000, 1000), 0)
+        random_rotation = Rotator(0, rng.uniform(-math.pi, math.pi), 0)
 
-        car_physics = Physics(velocity=Vector3(0, 0, 0),
-                              rotation=Rotator(0, (45 * f + t * 90) / 180 * math.pi, 0),
-                              angular_velocity=Vector3(0, 0, 0),
-                              location=Vector3(f * t * 2048, t * -2560, 17.0))
+        car_physics = Physics(location=random_position, velocity=random_velocity,
+                              rotation=random_rotation, angular_velocity=Vector3(0, 0, 0))
 
-        ball_physics = Physics(location=Vector3(0, 0, 92.74),
-                               velocity=Vector3(0, 0, 0),
-                               angular_velocity=Vector3(0, 0, 0))
+        boost = rng.uniform(0, 50)
 
-        car_state = CarState(boost_amount=34, physics=car_physics)
+        car_state = CarState(boost_amount=boost, physics=car_physics)
 
-        ball_state = BallState(physics=ball_physics)
+        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-4000, 4000), 93)
+
+        ball_state = BallState(physics=Physics(location=random_position, velocity=Vector3(0, 0, 0),
+                                               angular_velocity=Vector3(0, 0, 0)))
 
         return GameState(ball=ball_state, cars={0: car_state})
 
@@ -44,8 +44,8 @@ from util.matchcomms_grader import MatchcommsGrader
 
 
 def make_default_playlist():
-    match_config = make_match_config_with_bots(blue_bots=[current_path / 'kickoff_agent.cfg'])
-    exercise = RotationExercise(name='kickoff', grader=MatchcommsGrader(),
+    match_config = make_match_config_with_bots(blue_bots=[current_path / 'drive_agent.cfg'])
+    exercise = RotationExercise(name='drive to ball', grader=MatchcommsGrader(),
                                 match_config=match_config)
     return [exercise]
 
