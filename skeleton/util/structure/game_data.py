@@ -10,7 +10,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 
 from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix
 from skeleton.util.game_values import BACK_WALL
-from skeleton.util.math import sign
+from skeleton.util.math import team_sign
 
 
 class GameData:
@@ -29,7 +29,7 @@ class GameData:
         # cars
         self.my_car = Player()
 
-        self.opponnents: List[Player] = []
+        self.opponents: List[Player] = []
         self.teammates: List[Player] = []
 
         # ball
@@ -40,8 +40,8 @@ class GameData:
         self.small_pads: List[Pad] = []
 
         # goals
-        own_goal_loc = np.array([0, BACK_WALL * sign(team), 0])
-        own_goal_dir = np.array([0, sign(team), 0])
+        own_goal_loc = np.array([0, BACK_WALL * team_sign(team), 0])
+        own_goal_dir = np.array([0, team_sign(team), 0])
 
         self.opp_goal = Goal(own_goal_loc * -1, own_goal_dir * -1)
         self.own_goal = Goal(own_goal_loc, own_goal_dir)
@@ -75,12 +75,12 @@ class GameData:
 
         self.my_car.read_game_car(game_cars[self.index])
 
-        self.opponnents = []
+        self.opponents = []
         self.teammates = []
         for i in range(num_cars):
             if i != self.index:
                 car = game_cars[i]
-                team = self.opponnents if car.team != self.my_car.team else self.teammates
+                team = self.opponents if car.team != self.my_car.team else self.teammates
                 team.append(Player().read_game_car(car))
 
     def read_game_boosts(self, game_boosts: List[BoostPadState]):

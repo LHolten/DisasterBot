@@ -1,6 +1,6 @@
-'''Utility math functions'''
+"""Utility math functions"""
 
 
-def sign(value: float) -> int:
-    """Retuns 1 if value > 0 else -1"""
-    return 1 if value > 0 else -1
+def team_sign(team: int) -> float:
+    """Returns 1 if value else -1"""
+    return 1 if team == 1 else -1

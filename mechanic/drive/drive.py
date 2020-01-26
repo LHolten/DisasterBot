@@ -19,7 +19,7 @@ class DriveTurnToFaceTarget(BaseMechanic):
         car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
         car_yaw_ang_vel = -car_ang_vel_local_coords[2]
 
-        porportional_steer = 10 * yaw_angle_to_target
+        proportional_steer = 10 * yaw_angle_to_target
         derivative_steer = 1 / 4 * car_yaw_ang_vel
 
         if yaw_angle_to_target >= 0:
@@ -33,7 +33,7 @@ class DriveTurnToFaceTarget(BaseMechanic):
             else:
                 self.controls.handbrake = False
 
-        self.controls.steer = clip(porportional_steer + derivative_steer)
+        self.controls.steer = clip(proportional_steer + derivative_steer)
         self.controls.throttle = 1
         self.controls.boost = not self.controls.handbrake
 
