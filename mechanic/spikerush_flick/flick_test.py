@@ -1,7 +1,7 @@
-import random
 import sys
 from pathlib import Path
 from typing import Optional
+import copy
 
 import math
 from rlbot.training.training import Grade
@@ -12,25 +12,22 @@ from rlbottraining.rng import SeededRandomNumberGenerator
 from rlbottraining.training_exercise import TrainingExercise
 
 
-class RotationExercise(TrainingExercise):
+class FlickExercise(TrainingExercise):
     def on_briefing(self) -> Optional[Grade]:
         self.grader.matchcomms = self.get_matchcomms()
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
-        rng = random
         car_physics = Physics()
-        car_physics.rotation = Rotator(math.sinh(rng.uniform(-1, 1)),
-                                       rng.uniform(-math.pi, math.pi), rng.uniform(-math.pi, math.pi))
-        car_physics.location = Vector3(0, 0, 800)
+        car_physics.rotation = Rotator(0, rng.uniform(-math.pi, math.pi), 0)
+        car_physics.location = Vector3(0, 0, 16.5)
+        car_physics.velocity = Vector3(rng.uniform(-20, 20), rng.uniform(-20, 20), 0)
+        car_physics.angular_velocity = Vector3(0, 0, 0)
 
-        velocity = (rng.normalvariate(0, 1) for _ in range(3))
-        norm = sum(x ** 2 for x in velocity) ** 0.5
-        car_physics.angular_velocity = Vector3(*(x / norm * 5.5 for x in velocity))
+        ball_physics = copy.deepcopy(car_physics)
+        ball_physics.location.z += 92.75 + 16.5
 
-        ball_state = BallState(physics=Physics(velocity=Vector3(0, 0, 20), location=Vector3(500, 0, 800)))
-
-        return GameState(cars={0: CarState(physics=car_physics)}, ball=ball_state)
+        return GameState(cars={0: CarState(physics=car_physics)}, ball=BallState(physics=ball_physics))
 
 
 if __name__ == '__main__':
@@ -39,9 +36,11 @@ if __name__ == '__main__':
 
     from common_graders.matchcomms_grader import MatchcommsGrader
 
-    match_config = make_match_config_with_bots(blue_bots=[current_path / 'face_vector_agent.cfg'])
+    match_config = make_match_config_with_bots(blue_bots=[current_path / 'flick_agent.cfg'])
+    match_config.mutators.rumble = 'Spike Rush'
+    match_config.mutators.respawn_time = '1 Second'
 
-    exercises = [RotationExercise(name='simulate rotation', grader=MatchcommsGrader(), match_config=match_config)
+    exercises = [FlickExercise(name='flick', grader=MatchcommsGrader(), match_config=match_config)
                  for _ in range(100)]
 
     print(list(exercise_runner.run_playlist(exercises)))

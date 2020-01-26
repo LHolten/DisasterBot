@@ -9,8 +9,8 @@ from mechanic.base_mechanic import BaseMechanic
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 identity = torch.diag(torch.ones(3))[None, :, :].to(device)
-hidden_size = 20
-model_name = f'full_rotation_{hidden_size}'
+hidden_size = 40
+model_name = f'full_rotation_{hidden_size}_yeet_0.01'
 
 
 class AerialTurnML(BaseMechanic):
@@ -38,12 +38,12 @@ class AerialTurnML(BaseMechanic):
         rpy = self.policy(self.simulation.o.permute(0, 2, 1), self.simulation.w_local())[0]
         self.controls.roll, self.controls.pitch, self.controls.yaw = rpy
 
-        if self.simulation.error()[0].item() < 0.1:
+        if self.simulation.error()[0].item() < 0.01:
             self.frames_done += 1
         else:
             self.frames_done = 0
 
-        if self.frames_done >= 1:
+        if self.frames_done >= 10:
             self.finished = True
 
         return self.controls

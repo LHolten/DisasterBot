@@ -16,7 +16,7 @@ identity = torch.diag(torch.ones(3))[None, :, :].to(device)
 
 
 w_max = 5.5
-batch_size = 10000
+batch_size = 15000
 meps = 1 - 1e-5
 
 

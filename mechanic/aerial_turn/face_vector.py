@@ -10,22 +10,23 @@ import math
 class BaseFaceVector(BaseMechanic):
     car = None
     target = None
+    frames_done = 0
 
     def step(self, car: Car, target: vec3, dt) -> SimpleControllerState:
         self.car = car
         self.target = target
 
-        local_pos = dot(self.target, self.car.rotation)
-        local_pos_spherical = spherical(local_pos)
         local_omega = dot(self.car.angular_velocity, self.car.rotation)
 
-        theta_error = math.sqrt(local_pos_spherical[1]**2 + local_pos_spherical[2]**2)
         omega_error = math.sqrt(local_omega[1]**2 + local_omega[2]**2)
 
-        if omega_error < 0.1 and theta_error < 0.1:
-            self.finished = True
+        if omega_error < 0.1:
+            self.frames_done += 1
         else:
-            self.finished = False
+            self.frames_done = 0
+
+        if self.frames_done >= 10:
+            self.finished = True
 
         return self.rotate(car, target, dt)
 

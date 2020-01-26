@@ -1,60 +1,77 @@
 import sys
 from pathlib import Path
+import msvcrt
+import math
 
 import torch
-from quicktracer import trace
 from torch.optim.adadelta import Adadelta
-# from torch.optim.adamax import Adamax
+from quicktracer import trace
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-steps = 60
+steps = 40
 delta_time = 1 / 30
-hidden_size = 20
-model_name = f'full_rotation_{hidden_size}'
+hidden_size = 40
 load = True
-rotation_eps = 0.1
+rotation_eps = 0.01
+model_name = f'full_rotation_{hidden_size}_yeet_0.01'
 
 
 class Trainer:
     def __init__(self):
         from mechanic.aerial_turn_ml.policy import Policy
         from mechanic.aerial_turn_ml.simulation import Simulation
+        from mechanic.aerial_turn_ml.optimizer import Yeet, andt
 
         self.policy = Policy(hidden_size).to(device)
         self.simulation = Simulation(self.policy)
-        self.optimizer = Adadelta(self.policy.parameters())
+        self.optimizer = Yeet(self.policy.parameters())
+        # self.optimizer = Adadelta(self.policy.parameters())
+        self.andt = andt
+
+        self.max_reward = 0
+
         if load:
             self.policy.load_state_dict(torch.load(model_name + '.mdl'), False)
             self.optimizer.load_state_dict(torch.load(model_name + '.state'))
 
+        for group in self.optimizer.param_groups:
+            group['rho'] = 0.5
+            group['lr'] = 0.0002
+
     def train(self):
-        try:
-            while True:
-                self.episode()
-        except KeyboardInterrupt:
-            pass
-            torch.save(self.policy.state_dict(), model_name + '.mdl')
-            torch.save(self.optimizer.state_dict(), model_name + '.state')
+        while not msvcrt.kbhit():
+            self.episode()
+
+        torch.save(self.policy.state_dict(), model_name + '.mdl')
+        torch.save(self.optimizer.state_dict(), model_name + '.state')
 
     def episode(self):
         self.simulation.random_state()
-        loss = torch.zeros((self.simulation.o.shape[0], steps), device=device)
+        reward = torch.zeros((self.simulation.o.shape[0], steps), device=device)
 
         for i in range(steps):
             self.simulation.step(delta_time)
 
-            loss[:, i] = self.simulation.error()
+            reward[:, i] = self.simulation.error().neg() + rotation_eps
 
-        reward = torch.exp(-0.5 * (loss / rotation_eps).pow(2)).clone()
+        trace((reward > 0).float().sum(1).mean(0).item(), reset_on_parent_change=False, key='frames done')
 
+        reward[:, steps - 1] = self.andt(reward[:, steps - 1])
         for i in reversed(range(steps - 1)):
-            reward[:, i] = torch.min(reward[:, i:i+2], dim=1)[0]
+            reward[:, i] = self.andt(reward[:, i], reward[:, i+1])
+
+        loss = reward.sum(1).mean(0).neg()
+
+        # if average_reward.item() > self.max_reward:
+        #     self.max_reward = average_reward.item()
+        #     torch.save(self.policy.state_dict(), f'{model_name}_{round(self.max_reward, 1)}.mdl')
+        #     torch.save(self.optimizer.state_dict(), f'{model_name}_{round(self.max_reward, 1)}.state')
 
         self.optimizer.zero_grad()
-        reward.sum(1).mean(0).neg().backward()
+        loss.backward()
         self.optimizer.step()
-        trace(loss.sum(1).mean(0).item())
-        trace((loss < rotation_eps).float().sum().item())
+        trace(loss.item(), reset_on_parent_change=False, key='loss')
+        trace((reward < 0).sum(1).float().mean(0).item(), reset_on_parent_change=False, key='frame weight')
 
 
 if __name__ == '__main__':
