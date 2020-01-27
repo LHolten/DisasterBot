@@ -35,6 +35,9 @@ class GameData:
         # ball
         self.ball = Ball()
 
+        # ball_prediction parsed numpy array
+        self.ball_prediction = []
+
         # boost pads
         self.large_pads: List[Pad] = []
         self.small_pads: List[Pad] = []
@@ -138,7 +141,18 @@ class GameData:
         if len(self.own_goals) == 1:
             self.own_goal = self.own_goals[0]
 
-        # TODO: add read_rigid_body_tick
+    def read_ball_prediction_struct(self, ball_prediction_struct: BallPrediction):
+        """Reads an instance of BallPrediction provided by the rlbot framework,
+        and parses it's content into a structured numpy array."""
+
+        dtype = [('physics', [('location', '<f4', 3),
+                              ('rotation', [('pitch', '<f4'), ('yaw', '<f4'), ('roll', '<f4')]),
+                              ('velocity', '<f4', 3),
+                              ('angular_velocity', '<f4', 3)]),
+                 ('game_seconds', '<f4')]
+
+        self.ball_prediction = np.ctypeslib.as_array(ball_prediction_struct.slices).view(dtype)[
+            :ball_prediction_struct.num_slices]
 
     def update_extra_game_data(self):
         """Extracts and updates extra game data."""

@@ -39,6 +39,7 @@ class SkeletonAgent(BaseAgent):
 
         self.game_data.read_field_info(self.get_field_info())
         self.game_data.read_game_tick_packet(game_tick_packet)
+        self.game_data.read_ball_prediction_struct(self.get_ball_prediction_struct())
         self.game_data.update_extra_game_data()
 
     def feedback(self):
