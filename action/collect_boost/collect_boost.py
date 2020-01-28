@@ -18,14 +18,13 @@ class CollectBoost(BaseAction):
         if not self.mechanic:
             self.mechanic = DriveTurnToFaceTarget(self.agent)
 
-        boost_pad = closest_available_boost(car.location + car.velocity / 2,
-                                            game_data.large_pads + game_data.small_pads)
+        boost_pad = closest_available_boost(car.location + car.velocity / 2, game_data.boost_pads)
 
         if boost_pad is None:
             # All boost pads are inactive.
             return self.controls
 
-        self.mechanic.step(game_data.my_car, boost_pad.location)
+        self.mechanic.step(game_data.my_car, boost_pad["location"])
         self.controls = self.mechanic.controls
 
         return self.controls

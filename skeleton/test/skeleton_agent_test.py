@@ -2,8 +2,9 @@ import sys
 from pathlib import Path
 from timeit import timeit
 
-from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPacket
-from rlbot.utils.structures.ball_prediction_struct import BallPrediction
+from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPacket, MAX_BOOSTS, \
+    MAX_GOALS
+from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
 
 current_path = Path(__file__).absolute().parent
 print(current_path.parent.parent)
@@ -17,11 +18,14 @@ class SkeletonAgentTest(SkeletonAgent):
     """A base class for all SkeletonAgent tests"""
 
     def get_field_info(self):
-        return FieldInfoPacket()
+        field_info = FieldInfoPacket()
+        field_info.num_boosts = MAX_BOOSTS
+        field_info.num_goals = MAX_GOALS
+        return field_info
 
     def get_ball_prediction_struct(self):
         ball_prediction = BallPrediction()
-        ball_prediction.num_slices = 360
+        ball_prediction.num_slices = MAX_SLICES
         return ball_prediction
 
 
@@ -30,9 +34,14 @@ def main():
 
     agent = SkeletonAgentTest("test_agent", 0, 0)
     game_tick_packet = GameTickPacket()
+    game_tick_packet.num_cars = 10
+    game_tick_packet.num_boosts = MAX_BOOSTS
+    game_tick_packet.num_tiles = MAX_GOALS
 
     def test_function():
         return agent.get_output(game_tick_packet)
+
+    test_function()
 
     fps = 120
     n_times = 1000

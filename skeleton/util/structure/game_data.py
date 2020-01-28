@@ -35,12 +35,13 @@ class GameData:
         # ball
         self.ball = Ball()
 
-        # ball_prediction parsed numpy array
-        self.ball_prediction = []
+        # ball prediction structured numpy array
+        self.ball_prediction: np.ndarray = []
 
-        # boost pads
-        self.large_pads: List[Pad] = []
-        self.small_pads: List[Pad] = []
+        # boost pads structured numpy array
+        self.boost_pads: np.ndarray = []
+        self.large_pads: np.ndarray = []
+        self.small_pads: np.ndarray = []
 
         # goals
         own_goal_loc = np.array([0, BACK_WALL * team_sign(team), 0])
@@ -70,7 +71,8 @@ class GameData:
         self.read_game_cars(game_tick_packet.game_cars,
                             game_tick_packet.num_cars)
         self.ball.read_game_ball(game_tick_packet.game_ball)
-        self.read_game_boosts(game_tick_packet.game_boosts)
+        self.read_game_boosts(game_tick_packet.game_boosts,
+                              game_tick_packet.num_boost)
         self.read_game_info(game_tick_packet.game_info)
         self.update_extra_game_data()
 
@@ -86,12 +88,14 @@ class GameData:
                 team = self.opponents if car.team != self.my_car.team else self.teammates
                 team.append(Player().read_game_car(car))
 
-    def read_game_boosts(self, game_boosts: List[BoostPadState]):
+    def read_game_boosts(self, game_boosts: List[BoostPadState], num_boost: int):
+        """Reads a list BoostPadState ctype objects from the game tick packet,
+        and updates our structured numpy array based on it's contents."""
 
-        for pad_type in (self.large_pads, self.small_pads):
-            for pad in pad_type:
-                pad.is_active = game_boosts[pad.index].is_active
-                pad.timer = game_boosts[pad.index].timer
+        dtype = np.dtype([('is_active', '?'), ('timer', '<f4')], True)
+        converted_game_boosts = np.array(game_boosts, copy=False).view(dtype)[:num_boost]
+
+        self.boost_pads[['is_active', 'timer']] = converted_game_boosts
 
     def read_game_info(self, game_info: GameInfo):
 
@@ -114,15 +118,20 @@ class GameData:
             self.read_goals(field_info.goals, field_info.num_goals)
 
     def read_boost_pads(self, boost_pads: List[BoostPad], num_boosts: int):
+        """Reads a list BoostPad ctype objects from the field info,
+        and converts it's contents into a structured numpy array."""
 
-        self.large_pads = []
-        self.small_pads = []
+        dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', '?')], True)
+        converted_boost_pads = np.array(boost_pads, copy=False).view(dtype)[:num_boosts]
 
-        for i in range(num_boosts):
-            pad = boost_pads[i]
-            pad_type = self.large_pads if pad.is_full_boost else self.small_pads
-            pad_obj = Pad(i, vector3_to_numpy(pad.location), pad.is_full_boost)
-            pad_type.append(pad_obj)
+        full_dtype = [('location', '<f4', 3), ('is_full_boost', '?'),
+                      ('is_active', '?'), ('timer', '<f4')]
+
+        self.boost_pads = np.zeros(num_boosts, full_dtype)
+        self.boost_pads[['location', 'is_full_boost']] = converted_boost_pads
+
+        self.large_pads = self.boost_pads[self.boost_pads['is_full_boost']]
+        self.small_pads = self.boost_pads[~self.boost_pads['is_full_boost']]
 
     def read_goals(self, goals: List[GoalInfo], num_goals: int):
 
@@ -153,6 +162,8 @@ class GameData:
 
         self.ball_prediction = np.ctypeslib.as_array(ball_prediction_struct.slices).view(dtype)[
             :ball_prediction_struct.num_slices]
+
+        self.ball_prediction.flags.writeable = False
 
     def update_extra_game_data(self):
         """Extracts and updates extra game data."""
@@ -341,14 +352,3 @@ class Goal:
 
         self.location = location
         self.direction = direction
-
-
-class Pad:
-
-    def __init__(self, index=0, location=np.zeros(3), is_large=False, is_active=True, timer=0.0):
-
-        self.index = index
-        self.location = location
-        self.is_active = is_active
-        self.timer = timer
-        self.is_large = is_large

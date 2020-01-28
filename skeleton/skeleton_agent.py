@@ -16,6 +16,11 @@ class SkeletonAgent(BaseAgent):
         self.game_data = GameData(self.name, self.team, self.index)
         self.controls = SimpleControllerState()
 
+    def initialize_agent(self):
+        """Hopefully this gets called before get_output and after the game has fully loaded.
+        And hopefully no inheriting classes override this method without calling super()"""
+        self.game_data.read_field_info(self.get_field_info())
+
     def get_output(self, game_tick_packet: GameTickPacket) -> SimpleControllerState:
         """Overriding this function is not advised, use get_controls() instead."""
 
@@ -30,14 +35,13 @@ class SkeletonAgent(BaseAgent):
         delta_time = time.time() - chrono_start
 
         if delta_time > 1 / 120:
-            self.logger.warn(f"Took too long to execute: {round(delta_time, 5)} seconds.")
+            self.logger.warn(f"Took too long to execute: {delta_time * 120 * 100}%")
 
         return self.controls
 
     def pre_process(self, game_tick_packet: GameTickPacket):
         """First thing executed in get_output()."""
 
-        self.game_data.read_field_info(self.get_field_info())
         self.game_data.read_game_tick_packet(game_tick_packet)
         self.game_data.read_ball_prediction_struct(self.get_ball_prediction_struct())
         self.game_data.update_extra_game_data()
