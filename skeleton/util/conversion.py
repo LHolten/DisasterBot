@@ -1,6 +1,6 @@
-from rlbot.utils.structures.game_data_struct import Vector3, Rotator
-import numpy as np
 import math
+import numpy as np
+from rlbot.utils.structures.game_data_struct import Vector3, Rotator
 
 
 def vector3_to_numpy(vector3: Vector3):

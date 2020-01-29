@@ -29,12 +29,12 @@ class CollectBoost(BaseAction):
 
         return self.controls
 
-    def get_possible(self, game_data):
-        return True
-
     def update_status(self, game_data):
 
         boost = game_data.my_car.boost
 
         if boost == 100:
             self.finished = True
+
+    def is_valid(self, game_data):
+        return len(game_data.boost_pads['is_active']) > 0

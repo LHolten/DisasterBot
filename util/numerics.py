@@ -8,3 +8,8 @@ def clip(x: float, lower_cap: float = -1, higher_cap: float = 1):
         return higher_cap
     else:
         return x
+
+
+def sign(x: float):
+    """Retuns 1 if x > 0 else -1. > instead of >= so that sign(False) returns -1"""
+    return 1 if x > 0 else -1

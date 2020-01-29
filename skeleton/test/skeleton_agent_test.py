@@ -7,7 +7,6 @@ from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPac
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
 
 current_path = Path(__file__).absolute().parent
-print(current_path.parent.parent)
 sys.path.insert(0, str(current_path.parent.parent))
 
 from skeleton import SkeletonAgent
@@ -35,8 +34,10 @@ def main():
     agent = SkeletonAgentTest("test_agent", 0, 0)
     game_tick_packet = GameTickPacket()
     game_tick_packet.num_cars = 10
-    game_tick_packet.num_boosts = MAX_BOOSTS
+    game_tick_packet.num_boost = MAX_BOOSTS
     game_tick_packet.num_tiles = MAX_GOALS
+
+    agent.initialize_agent()
 
     def test_function():
         return agent.get_output(game_tick_packet)

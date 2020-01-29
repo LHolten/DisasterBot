@@ -21,9 +21,6 @@ class Kickoff(BaseAction):
 
         return self.controls
 
-    def get_possible(self, game_data):
-        return True
-
     def update_status(self, game_data):
         ball_loc = game_data.ball.location
         kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 140
