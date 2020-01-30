@@ -41,17 +41,17 @@ class VelocityRange:
         """Advances the state to the soonest phase end."""
         mask = state['vel'] < cls.max_speed
 
-        time = cls.time_to_reach_velocity(cls.max_speed, state['vel'][mask], boost)
-        time = np.minimum(time, state['time'][mask])
+        time = cls.time_to_reach_velocity(cls.max_speed, state['vel'], boost)
+        time = np.minimum(time, state['time'])
 
         if boost:
-            time = np.minimum(time, state['boost'][mask] / BOOST_CONSUMPTION_RATE)
-            state['boost'][mask] = state['boost'][mask] - time * BOOST_CONSUMPTION_RATE
+            time = np.minimum(time, state['boost'] / BOOST_CONSUMPTION_RATE)
+            state['boost'] = np.where(mask, state['boost'] - time * BOOST_CONSUMPTION_RATE, state['boost'])
 
-        state['dist'][mask] = state['dist'][mask] + \
-            cls.distance_traveled(time, state['vel'][mask], boost)
-        state['vel'][mask] = cls.velocity_reached(time, state['vel'][mask], boost)
-        state['time'][mask] = state['time'][mask] - time
+        state['dist'] = np.where(mask, state['dist'] + cls.distance_traveled(time, state['vel'], boost),
+                                 state['dist'])
+        state['vel'] = np.where(mask, cls.velocity_reached(time, state['vel'], boost), state['vel'])
+        state['time'] = np.where(mask, state['time'] - time, state['time'])
 
 
 class Velocity0To1400(VelocityRange):
@@ -60,7 +60,8 @@ class Velocity0To1400(VelocityRange):
     @staticmethod
     def distance_traveled(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         b = get_acceleration_offset(boost)
-        return (b * (-a * t + np.expm1(a * t)) + a * v0 * np.expm1(a * t)) / np.square(a)
+        sub = np.expm1(a * t)
+        return (b * (-a * t + sub) + a * v0 * sub) / np.square(a)
 
     @staticmethod
     def velocity_reached(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
