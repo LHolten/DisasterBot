@@ -1,17 +1,22 @@
-from typing import List
+import ctypes
 from copy import copy
-import numpy as np
+from typing import List
 
+import numpy as np
+from rlbot.agents.base_agent import SimpleControllerState
+from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 from rlbot.utils.structures.game_data_struct import GameTickPacket, PlayerInfo, BallInfo, \
     GameInfo, Physics, BoostPadState, FieldInfoPacket, BoostPad, GoalInfo, Touch, \
-    DropShotInfo
-from rlbot.utils.structures.ball_prediction_struct import BallPrediction
-from rlbot.agents.base_agent import SimpleControllerState
+    DropShotInfo, MAX_BOOSTS
 
 from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix, \
     box_shape_to_numpy
 from skeleton.util.game_values import BACK_WALL
 from skeleton.util.math import team_sign
+
+buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+buf_from_mem.restype = ctypes.py_object
+buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
 
 
 class GameData:
@@ -89,12 +94,13 @@ class GameData:
                 team = self.opponents if car.team != self.my_car.team else self.teammates
                 team.append(Player().read_game_car(car))
 
-    def read_game_boosts(self, game_boosts: List[BoostPadState], num_boost: int):
+    def read_game_boosts(self, game_boosts: BoostPadState * MAX_BOOSTS, num_boosts: int):
         """Reads a list BoostPadState ctype objects from the game tick packet,
         and updates our structured numpy array based on it's contents."""
 
         dtype = np.dtype([('is_active', '?'), ('timer', '<f4')], True)
-        converted_game_boosts = np.array(game_boosts, copy=False).view(dtype)[:num_boost]
+        buffer = buf_from_mem(ctypes.addressof(game_boosts), dtype.itemsize * num_boosts, 0x100)
+        converted_game_boosts = np.frombuffer(buffer, dtype)
 
         self.boost_pads[['is_active', 'timer']] = converted_game_boosts
 
@@ -118,12 +124,13 @@ class GameData:
         if field_info.num_goals != 0:
             self.read_goals(field_info.goals, field_info.num_goals)
 
-    def read_boost_pads(self, boost_pads: List[BoostPad], num_boosts: int):
+    def read_boost_pads(self, boost_pads: BoostPad * MAX_BOOSTS, num_boosts: int):
         """Reads a list BoostPad ctype objects from the field info,
         and converts it's contents into a structured numpy array."""
 
         dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', '?')], True)
-        converted_boost_pads = np.array(boost_pads, copy=False).view(dtype)[:num_boosts]
+        buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
+        converted_boost_pads = np.frombuffer(buffer, dtype)
 
         full_dtype = [('location', '<f4', 3), ('is_full_boost', '?'),
                       ('is_active', '?'), ('timer', '<f4')]
@@ -151,18 +158,17 @@ class GameData:
         if len(self.own_goals) == 1:
             self.own_goal = self.own_goals[0]
 
-    def read_ball_prediction_struct(self, ball_prediction_struct: BallPrediction):
+    def read_ball_prediction_struct(self, ball_prediction: BallPrediction):
         """Reads an instance of BallPrediction provided by the rlbot framework,
         and parses it's content into a structured numpy array."""
 
-        dtype = [('physics', [('location', '<f4', 3),
-                              ('rotation', [('pitch', '<f4'), ('yaw', '<f4'), ('roll', '<f4')]),
-                              ('velocity', '<f4', 3),
-                              ('angular_velocity', '<f4', 3)]),
-                 ('game_seconds', '<f4')]
-
-        self.ball_prediction = np.ctypeslib.as_array(ball_prediction_struct.slices).view(dtype)[
-            :ball_prediction_struct.num_slices]
+        dtype = np.dtype([('physics', [('location', '<f4', 3),
+                                       ('rotation', [('pitch', '<f4'), ('yaw', '<f4'), ('roll', '<f4')]),
+                                       ('velocity', '<f4', 3),
+                                       ('angular_velocity', '<f4', 3)]),
+                          ('game_seconds', '<f4')])
+        buffer = buf_from_mem(ctypes.addressof(ball_prediction.slices), dtype.itemsize * ball_prediction.num_slices, 0x100)
+        self.ball_prediction = np.frombuffer(buffer, dtype)
 
         self.ball_prediction.flags.writeable = False
 
@@ -361,3 +367,31 @@ class Goal:
 
         self.location = location
         self.direction = direction
+
+
+def main():
+
+    from timeit import timeit
+
+    class TestThing(GameData):
+        def __init__(self):
+            pass
+
+    test = TestThing()
+
+    ball_thing = BallPrediction()
+
+    def test_function():
+        test.read_ball_prediction_struct(ball_thing)
+
+    fps = 120
+    n_times = 100000
+    time_taken = timeit(test_function, number=n_times)
+    percentage = round(time_taken * fps / n_times * 100, 5)
+
+    print(f"Took {time_taken} seconds to run {n_times} times.")
+    print(f"That's {percentage} % of our time budget.")
+
+
+if __name__ == '__main__':
+    main()
