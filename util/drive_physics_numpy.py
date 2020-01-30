@@ -17,21 +17,21 @@ BOOST_CONSUMPTION_RATE = 33.333  # per second
 a = - (THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 
 
-def get_b(boost):
+def get_acceleration_offset(boost: bool):
     return THROTTLE_ACCELERATION_0 + BOOST_ACCELERATION if boost else THROTTLE_ACCELERATION_0
 
 
 class VelocityRange:
     @staticmethod
-    def distance_traveled(t, v0, boost):
+    def distance_traveled(t: float, v0: float, boost: bool):
         raise NotImplementedError
 
     @staticmethod
-    def velocity_reached(t, v0, boost):
+    def velocity_reached(t: float, v0: float, boost: bool):
         raise NotImplementedError
 
     @staticmethod
-    def time_to_reach_velocity(v, v0, boost):
+    def time_to_reach_velocity(v: float, v0: float, boost: bool):
         raise NotImplementedError
 
     @staticmethod
@@ -41,18 +41,18 @@ class VelocityRange:
 
 class Velocity0To1400(VelocityRange):
     @staticmethod
-    def distance_traveled(t, v0, boost):
-        b = get_b(boost)
+    def distance_traveled(t: float, v0: float, boost: bool):
+        b = get_acceleration_offset(boost)
         return (b * (-a * t + np.expm1(a * t)) + a * v0 * np.expm1(a * t)) / np.square(a)
 
     @staticmethod
-    def velocity_reached(t, v0, boost):
-        b = get_b(boost)
+    def velocity_reached(t: float, v0: float, boost: bool):
+        b = get_acceleration_offset(boost)
         return (b * np.expm1(a * t)) / a + v0 * np.exp(a * t)
 
     @staticmethod
-    def time_to_reach_velocity(v, v0, boost):
-        b = get_b(boost)
+    def time_to_reach_velocity(v: float, v0: float, boost: bool):
+        b = get_acceleration_offset(boost)
         return np.log((a * v + b) / (a * v0 + b)) / a
 
     @staticmethod
@@ -63,15 +63,15 @@ class Velocity0To1400(VelocityRange):
 # for when the only acceleration that applies is from boost.
 class Velocity1400To2300(Velocity0To1400):
     @staticmethod
-    def distance_traveled(t, v0, boost):
+    def distance_traveled(t: float, v0: float, boost: bool):
         return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    def velocity_reached(t, v0, boost):
+    def velocity_reached(t: float, v0: float, boost: bool):
         return BOOST_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v, v0, boost):
+    def time_to_reach_velocity(v: float, v0: float, boost: bool):
         return (v - v0) / BOOST_ACCELERATION
 
     @staticmethod
@@ -84,15 +84,15 @@ class Velocity1400To2300(Velocity0To1400):
 # assuming throttle is positive, flip velocity signs if otherwise.
 class VelocityNegative(VelocityRange):
     @staticmethod
-    def distance_traveled(t, v0, boost):
+    def distance_traveled(t: float, v0: float, boost: bool):
         return t * (BREAK_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    def velocity_reached(t, v0, boost):
+    def velocity_reached(t: float, v0: float, boost: bool):
         return BREAK_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v, v0, boost):
+    def time_to_reach_velocity(v: float, v0: float, boost: bool):
         return (v - v0) / BREAK_ACCELERATION
 
     @staticmethod
@@ -100,7 +100,7 @@ class VelocityNegative(VelocityRange):
         return 0
 
 
-def state_step(state, vel_range: Type[VelocityRange], boost):
+def state_step(state, vel_range: Type[VelocityRange], boost: bool):
     """Advances the state to the soonest phase end."""
     mask = state['vel'] < vel_range.max_speed()
 
@@ -111,13 +111,15 @@ def state_step(state, vel_range: Type[VelocityRange], boost):
         time = np.minimum(time, state['boost'][mask] / BOOST_CONSUMPTION_RATE)
         state['boost'][mask] = state['boost'][mask] - time * BOOST_CONSUMPTION_RATE
 
-    state['dist'][mask] = state['dist'][mask] + vel_range.distance_traveled(time, state['vel'][mask], boost)
+    state['dist'][mask] = state['dist'][mask] + \
+        vel_range.distance_traveled(time, state['vel'][mask], boost)
     state['vel'][mask] = vel_range.velocity_reached(time, state['vel'][mask], boost)
     state['time'][mask] = state['time'][mask] - time
 
 
-# this allows any starting velocity
-def distance_traveled_numpy(t, v0, boost_amount):
+def distance_traveled_numpy(t: float, v0: float, boost_amount: float):
+    """Returns the max distance driven forward using boost, this allows any starting velocity
+    assuming we're not using boost when going backwards and using it otherwise."""
     state = {'time': t, 'vel': v0, 'boost': boost_amount, 'dist': np.zeros_like(t)}
 
     state_step(state, VelocityNegative, False),
@@ -145,7 +147,7 @@ def main():
     print(np.array(test_function(), dtype='object'))
 
     fps = 120
-    n_times = 100000
+    n_times = 10000
     time_taken = timeit(test_function, number=n_times)
     percentage = round(time_taken * fps / n_times * 100, 5)
 

@@ -1,28 +1,26 @@
 import math
 
-DT = 1 / 60
-
-THROTTLE_ACCEL_0 = 1600
-THROTTLE_ACCEL_1400 = 160
+THROTTLE_ACCELERATION_0 = 1600
+THROTTLE_ACCELERATION_1400 = 160
 THROTTLE_MID_SPEED = 1400
 
-BOOST_ACCEL = 991.6667
-BREAK_ACCEL = 3500
+BOOST_ACCELERATION = 991.6667
+BREAK_ACCELERATION = 3500
 
 MAX_CAR_SPEED = 2300
 
 BOOST_CONSUMPTION_RATE = 33.333  # per second
 
 # constants of the acceleration between 0 to 1400 velocity: acceleration = a * velocity + b
-a = - (THROTTLE_ACCEL_0 - THROTTLE_ACCEL_1400) / THROTTLE_MID_SPEED
-b = THROTTLE_ACCEL_0
+a = - (THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
+b = THROTTLE_ACCELERATION_0
 
 
-def sign(x):
+def sign(x: float):
     return 1 if x >= 0 else -1
 
 
-def throttle_acc(vel, throttle=1):
+def throttle_acc(vel: float, throttle: float = 1):
     throttle = min(1, max(-1, throttle))
     if throttle * vel < 0:
         return -3600 * sign(vel)
@@ -32,8 +30,9 @@ def throttle_acc(vel, throttle=1):
         return (a * min(abs(vel), THROTTLE_MID_SPEED) + b) * throttle
 
 
-def min_travel_time_simulation(max_distance, v_0, initial_boost):
+def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: float):
 
+    DT = 1 / 60
     time = 0
     distance = 0
     velocity = v_0
@@ -41,86 +40,84 @@ def min_travel_time_simulation(max_distance, v_0, initial_boost):
     acceleration = 0
 
     while (distance < max_distance):
-        acceleration = throttle_acc(velocity) + (boost > 1) * BOOST_ACCEL
+        acceleration = throttle_acc(velocity) + (boost > 1) * BOOST_ACCELERATION
         velocity = min(velocity + acceleration * DT, MAX_CAR_SPEED)
         distance = distance + velocity * DT + 0.5 * acceleration * DT * DT
         boost -= BOOST_CONSUMPTION_RATE * DT
         time += DT
-        if (time > 10):
+        if (time > 6):
             break
 
     return time
 
 
-def distance_traveled_0_1400(t, v0, is_boosting):
-    b2 = b + is_boosting * BOOST_ACCEL
+def distance_traveled_0_1400(t: float, v0: float, is_boosting: bool):
+    b2 = b + is_boosting * BOOST_ACCELERATION
     return (b2 * (-a * t + math.expm1(a * t)) + a * v0 * math.expm1(a * t)) / math.pow(a, 2)
 
 
-def velocity_reached_0_1400(t, v0, is_boosting):
-    b2 = b + is_boosting * BOOST_ACCEL
+def velocity_reached_0_1400(t: float, v0: float, is_boosting: bool):
+    b2 = b + is_boosting * BOOST_ACCELERATION
     return (b2 * math.expm1(a * t)) / a + v0 * math.exp(a * t)
 
 
-def time_to_reach_velocity_0_1400(v, v0, is_boosting):
-    b2 = b + is_boosting * BOOST_ACCEL
+def time_to_reach_velocity_0_1400(v: float, v0: float, is_boosting: bool):
+    b2 = b + is_boosting * BOOST_ACCELERATION
     return math.log((a * v + b2) / (a * v0 + b2)) / a
 
 
 # for when the only acceleration that applies is from boost.
-
-def distance_traveled_1400_2300_boost(t, v0):
-    return t * (BOOST_ACCEL * t + 2 * v0) / 2
-
-
-def velocity_reached_1400_2300_boost(t, v0):
-    return BOOST_ACCEL * t + v0
+def distance_traveled_1400_2300_boost(t: float, v0: float):
+    return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
 
 
-def time_to_reach_velocity_1400_2300_boost(v, v0):
-    return (v - v0) / BOOST_ACCEL
+def velocity_reached_1400_2300_boost(t: float, v0: float):
+    return BOOST_ACCELERATION * t + v0
 
 
-def time_to_reach_distance_1400_2300_boost(d, v):
-    return -(math.sqrt(2 * BOOST_ACCEL * d + math.pow(v, 2)) + v) / a
+def time_to_reach_velocity_1400_2300_boost(v: float, v0: float):
+    return (v - v0) / BOOST_ACCELERATION
+
+
+def time_to_reach_distance_1400_2300_boost(d: float, v: float):
+    return -(math.sqrt(2 * BOOST_ACCELERATION * d + math.pow(v, 2)) + v) / a
 
 
 # for when the velocity is opposite the throttle direction,
 # only the breaking acceleration applies, boosting has no effect.
 # assuming throttle is positive, flip velocity signs if otherwise.
-
-def distance_traveled_negative(t, v0):
-    return t * (BREAK_ACCEL * t + 2 * v0) / 2
-
-
-def velocity_reached_negative(t, v0):
-    return BREAK_ACCEL * t + v0
+def distance_traveled_negative(t: float, v0: float):
+    return t * (BREAK_ACCELERATION * t + 2 * v0) / 2
 
 
-def time_to_reach_velocity_negative(v, v0):
-    return (v - v0) / BREAK_ACCEL
+def velocity_reached_negative(t: float, v0: float):
+    return BREAK_ACCELERATION * t + v0
 
 
-def distance_traveled_zero_acceleration(t, v0):
+def time_to_reach_velocity_negative(v: float, v0: float):
+    return (v - v0) / BREAK_ACCELERATION
+
+
+def distance_traveled_zero_acceleration(t: float, v0: float):
     return t * v0
 
 
 # boost consumption
-def time_to_reach_0_boost(boost_amount):
+def time_to_reach_0_boost(boost_amount: float):
     return boost_amount / BOOST_CONSUMPTION_RATE
 
 
-def boost_reached(time, initial_boost_amount):
+def boost_reached(time: float, initial_boost_amount: float):
     return max(0, initial_boost_amount - time * BOOST_CONSUMPTION_RATE)
 
 
-# this allows any starting velocity
-# assuming we're throttling forward and using boost efficiently
-def distance_traveled(t, v0, boost_amount):
+def distance_traveled(time_window: float, initial_velocity: float, boost_amount: float):
+    """Returns the max distance driven forward using boost, this allows any starting velocity
+      assuming we're not using boost when going backwards and using it otherwise."""
 
     distance = 0
-    time_left = t
-    velocity = v0
+    time_left = time_window
+    velocity = initial_velocity
     boost_left = boost_amount
 
     if velocity < 0:
