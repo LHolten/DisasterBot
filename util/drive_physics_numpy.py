@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Dict, Any
 
 import numpy as np
 
@@ -22,110 +22,102 @@ def get_acceleration_offset(boost: bool):
 
 
 class VelocityRange:
+    max_speed = None
+
     @staticmethod
-    def distance_traveled(t: float, v0: float, boost: bool):
+    def distance_traveled(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         raise NotImplementedError
 
     @staticmethod
-    def velocity_reached(t: float, v0: float, boost: bool):
+    def velocity_reached(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         raise NotImplementedError
 
     @staticmethod
-    def time_to_reach_velocity(v: float, v0: float, boost: bool):
+    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         raise NotImplementedError
 
-    @staticmethod
-    def max_speed():
-        raise NotImplementedError
+    @classmethod
+    def state_step(cls, state: Dict, boost: bool):
+        """Advances the state to the soonest phase end."""
+        mask = state['vel'] < cls.max_speed
+
+        time = cls.time_to_reach_velocity(cls.max_speed, state['vel'][mask], boost)
+        time = np.minimum(time, state['time'][mask])
+
+        if boost:
+            time = np.minimum(time, state['boost'][mask] / BOOST_CONSUMPTION_RATE)
+            state['boost'][mask] = state['boost'][mask] - time * BOOST_CONSUMPTION_RATE
+
+        state['dist'][mask] = state['dist'][mask] + \
+            cls.distance_traveled(time, state['vel'][mask], boost)
+        state['vel'][mask] = cls.velocity_reached(time, state['vel'][mask], boost)
+        state['time'][mask] = state['time'][mask] - time
 
 
 class Velocity0To1400(VelocityRange):
+    max_speed = THROTTLE_MID_SPEED
+
     @staticmethod
-    def distance_traveled(t: float, v0: float, boost: bool):
+    def distance_traveled(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         b = get_acceleration_offset(boost)
         return (b * (-a * t + np.expm1(a * t)) + a * v0 * np.expm1(a * t)) / np.square(a)
 
     @staticmethod
-    def velocity_reached(t: float, v0: float, boost: bool):
+    def velocity_reached(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         b = get_acceleration_offset(boost)
         return (b * np.expm1(a * t)) / a + v0 * np.exp(a * t)
 
     @staticmethod
-    def time_to_reach_velocity(v: float, v0: float, boost: bool):
+    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         b = get_acceleration_offset(boost)
         return np.log((a * v + b) / (a * v0 + b)) / a
-
-    @staticmethod
-    def max_speed():
-        return THROTTLE_MID_SPEED
 
 
 # for when the only acceleration that applies is from boost.
 class Velocity1400To2300(Velocity0To1400):
+    max_speed = MAX_CAR_SPEED
+
     @staticmethod
-    def distance_traveled(t: float, v0: float, boost: bool):
+    def distance_traveled(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    def velocity_reached(t: float, v0: float, boost: bool):
+    def velocity_reached(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return BOOST_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v: float, v0: float, boost: bool):
+    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return (v - v0) / BOOST_ACCELERATION
-
-    @staticmethod
-    def max_speed():
-        return MAX_CAR_SPEED
 
 
 # for when the velocity is opposite the throttle direction,
 # only the breaking acceleration applies, boosting has no effect.
 # assuming throttle is positive, flip velocity signs if otherwise.
 class VelocityNegative(VelocityRange):
+    max_speed = 0
+
     @staticmethod
-    def distance_traveled(t: float, v0: float, boost: bool):
+    def distance_traveled(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return t * (BREAK_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    def velocity_reached(t: float, v0: float, boost: bool):
+    def velocity_reached(t: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return BREAK_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v: float, v0: float, boost: bool):
+    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return (v - v0) / BREAK_ACCELERATION
 
-    @staticmethod
-    def max_speed():
-        return 0
 
-
-def state_step(state, vel_range: Type[VelocityRange], boost: bool):
-    """Advances the state to the soonest phase end."""
-    mask = state['vel'] < vel_range.max_speed()
-
-    time = vel_range.time_to_reach_velocity(vel_range.max_speed(), state['vel'][mask], boost)
-    time = np.minimum(time, state['time'][mask])
-
-    if boost:
-        time = np.minimum(time, state['boost'][mask] / BOOST_CONSUMPTION_RATE)
-        state['boost'][mask] = state['boost'][mask] - time * BOOST_CONSUMPTION_RATE
-
-    state['dist'][mask] = state['dist'][mask] + \
-        vel_range.distance_traveled(time, state['vel'][mask], boost)
-    state['vel'][mask] = vel_range.velocity_reached(time, state['vel'][mask], boost)
-    state['time'][mask] = state['time'][mask] - time
-
-
-def distance_traveled_numpy(t: np.ndarray, v0: np.ndarray, boost_amount: float):
+def distance_traveled_numpy(t: Any, v0: Any, boost_amount: Any) -> np.ndarray:
     """Returns the max distance driven forward using boost, this allows any starting velocity
     assuming we're not using boost when going backwards and using it otherwise."""
     state = {'time': t, 'vel': v0, 'boost': boost_amount, 'dist': np.zeros_like(t)}
 
-    state_step(state, VelocityNegative, False),
-    state_step(state, Velocity0To1400, True)
-    state_step(state, Velocity0To1400, False)
-    state_step(state, Velocity1400To2300, True)
+    VelocityNegative.state_step(state, False)
+    Velocity0To1400.state_step(state, True)
+    Velocity0To1400.state_step(state, False)
+    Velocity1400To2300.state_step(state, True)
 
     return state['dist'] + state['time'] * state['vel']
 
