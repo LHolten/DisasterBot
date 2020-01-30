@@ -136,7 +136,7 @@ def boost_velocity(vel, dvel, lboost=0):
     rel_vel = dvel - vel
     if vel < 1400:
         if dvel < 0:
-            threshold = 800
+            threshold = 4600
         else:
             threshold = 250
     else:
