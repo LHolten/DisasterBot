@@ -118,12 +118,7 @@ def state_step(state, vel_range: Type[VelocityRange], boost):
 
 # this allows any starting velocity
 def distance_traveled_numpy(t, v0, boost_amount):
-    dtype = [('time', float), ('vel', float), ('boost', float), ('dist', float)]
-    state = np.empty_like(t, dtype)
-    state['time'] = t
-    state['vel'] = v0
-    state['boost'] = boost_amount
-    state['dist'] = 0
+    state = {'time': t, 'vel': v0, 'boost': boost_amount, 'dist': np.zeros_like(t)}
 
     state_step(state, VelocityNegative, False),
 
