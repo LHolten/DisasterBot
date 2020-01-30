@@ -9,46 +9,6 @@ PI = math.pi
 DT = 1 / 120
 
 
-class DriveTurnToFaceTarget(BaseMechanic):
-
-    def step(self, car, target_loc) -> SimpleControllerState:
-
-        target_in_local_coords = np.dot(target_loc - car.location, car.rotation_matrix)
-
-        # PD for steer
-        yaw_angle_to_target = math.atan2(target_in_local_coords[1], target_in_local_coords[0])
-        car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
-        car_yaw_ang_vel = -car_ang_vel_local_coords[2]
-
-        proportional_steer = 10 * yaw_angle_to_target
-        derivative_steer = 1 / 4 * car_yaw_ang_vel
-
-        if yaw_angle_to_target >= 0:
-            if yaw_angle_to_target + car_yaw_ang_vel / 4 > PI / 3:
-                self.controls.handbrake = True
-            else:
-                self.controls.handbrake = False
-        elif yaw_angle_to_target < 0:
-            if yaw_angle_to_target + car_yaw_ang_vel / 4 < -PI / 3:
-                self.controls.handbrake = True
-            else:
-                self.controls.handbrake = False
-
-        self.controls.steer = clip(proportional_steer + derivative_steer)
-        self.controls.throttle = 1
-        self.controls.boost = not self.controls.handbrake
-
-        # updating status
-        error = abs(car_yaw_ang_vel) + abs(yaw_angle_to_target)
-
-        if error < 0.01:
-            self.finished = True
-        else:
-            self.finished = False
-
-        return self.controls
-
-
 class DriveArriveInTime(BaseMechanic):
 
     def step(self, car, target_loc, time) -> SimpleControllerState:
@@ -66,12 +26,12 @@ class DriveArriveInTime(BaseMechanic):
         derivative_steer = 1 / 4 * car_yaw_ang_vel
 
         if yaw_angle_to_target >= 0:
-            if yaw_angle_to_target + car_yaw_ang_vel / 4 > PI / 4:
+            if yaw_angle_to_target + car_yaw_ang_vel / 4 > PI / 5:
                 self.controls.handbrake = True
             else:
                 self.controls.handbrake = False
         elif yaw_angle_to_target < 0:
-            if yaw_angle_to_target + car_yaw_ang_vel / 4 < -PI / 4:
+            if yaw_angle_to_target + car_yaw_ang_vel / 4 < -PI / 5:
                 self.controls.handbrake = True
             else:
                 self.controls.handbrake = False
@@ -79,7 +39,7 @@ class DriveArriveInTime(BaseMechanic):
         self.controls.steer = clip(proportional_steer + derivative_steer)
 
         # arrive in time
-        desired_velocity = distance / max(time - 1 / 60, 0.001)
+        desired_velocity = clip(distance / max(time - 1 / 60, 0.001), -2300, 2300)
 
         # throttle to desired velocity
         current_velocity = np.linalg.norm(car.velocity)
@@ -100,9 +60,9 @@ class DriveArriveInTime(BaseMechanic):
             self.controls.handbrake = self.controls.boost = False
 
         # rendering
-        strings = [f"desired_velocity : {desired_velocity}",
-                   f"time : {time}",
-                   f"throttle : {self.controls.throttle}"]
+        strings = [f"desired_velocity : {desired_velocity:.2f}",
+                   f"time : {time:.2f}",
+                   f"throttle : {self.controls.throttle:.2f}"]
 
         self.agent.renderer.begin_rendering()
         for i, string in enumerate(strings):

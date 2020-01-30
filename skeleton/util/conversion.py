@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from rlbot.utils.structures.game_data_struct import Vector3, Rotator
+from rlbot.utils.structures.game_data_struct import Vector3, Rotator, BoxShape
 
 
 def vector3_to_numpy(vector3: Vector3):
@@ -46,3 +46,10 @@ def rotator_to_matrix(rotator: Rotator):
     theta.flags.writeable = False
 
     return theta
+
+
+def box_shape_to_numpy(box_shape: BoxShape):
+    """Converts BoxShape to numpy array"""
+    a = np.array([box_shape.length, box_shape.width, box_shape.height])
+    a.flags.writeable = False
+    return a

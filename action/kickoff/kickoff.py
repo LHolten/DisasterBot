@@ -2,7 +2,7 @@ import math
 from rlbot.agents.base_agent import SimpleControllerState
 from action.base_action import BaseAction
 
-from mechanic.drive import DriveTurnToFaceTarget
+from mechanic.drive import DriveTurnFaceTarget
 
 
 class Kickoff(BaseAction):
@@ -14,7 +14,7 @@ class Kickoff(BaseAction):
     def get_controls(self, game_data) -> SimpleControllerState:
 
         if not self.mechanic:
-            self.mechanic = DriveTurnToFaceTarget(self.agent)
+            self.mechanic = DriveTurnFaceTarget(self.agent)
 
         self.mechanic.step(game_data.my_car, game_data.ball.location)
         self.controls = self.mechanic.controls

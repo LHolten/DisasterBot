@@ -2,7 +2,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 
 from action.base_action import BaseAction
 from util.boost_utils import closest_available_boost
-from mechanic.drive import DriveTurnToFaceTarget
+from mechanic.drive import DriveTurnFaceTarget
 
 
 class CollectBoost(BaseAction):
@@ -16,7 +16,7 @@ class CollectBoost(BaseAction):
         car = game_data.my_car
 
         if not self.mechanic:
-            self.mechanic = DriveTurnToFaceTarget(self.agent)
+            self.mechanic = DriveTurnFaceTarget(self.agent)
 
         boost_pad = closest_available_boost(car.location + car.velocity / 2, game_data.boost_pads)
 

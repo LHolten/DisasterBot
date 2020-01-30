@@ -117,17 +117,14 @@ def state_step(state, vel_range: Type[VelocityRange], boost: bool):
     state['time'][mask] = state['time'][mask] - time
 
 
-def distance_traveled_numpy(t: float, v0: float, boost_amount: float):
+def distance_traveled_numpy(t: np.ndarray, v0: np.ndarray, boost_amount: float):
     """Returns the max distance driven forward using boost, this allows any starting velocity
     assuming we're not using boost when going backwards and using it otherwise."""
     state = {'time': t, 'vel': v0, 'boost': boost_amount, 'dist': np.zeros_like(t)}
 
     state_step(state, VelocityNegative, False),
-
     state_step(state, Velocity0To1400, True)
-
     state_step(state, Velocity0To1400, False)
-
     state_step(state, Velocity1400To2300, True)
 
     return state['dist'] + state['time'] * state['vel']
@@ -137,9 +134,9 @@ def main():
 
     from timeit import timeit
 
-    time = np.array([1.821725257142, 2] * 2)
-    initial_velocity = np.array([-2300, -400] * 2)
-    boost_amount = np.array([0, 30] * 2)
+    time = np.array([1.821725257142, 2] * 180)
+    initial_velocity = np.array([-2300, -400] * 180)
+    boost_amount = np.array([0, 30] * 180)
 
     def test_function():
         return distance_traveled_numpy(time, initial_velocity, boost_amount)

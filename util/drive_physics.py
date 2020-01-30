@@ -5,7 +5,8 @@ THROTTLE_ACCELERATION_1400 = 160
 THROTTLE_MID_SPEED = 1400
 
 BOOST_ACCELERATION = 991.6667
-BREAK_ACCELERATION = 3500
+BREAK_ACCELERATION = -3500
+COAST_ACCELERATION = -525
 
 MAX_CAR_SPEED = 2300
 
@@ -23,9 +24,9 @@ def sign(x: float):
 def throttle_acc(vel: float, throttle: float = 1):
     throttle = min(1, max(-1, throttle))
     if throttle * vel < 0:
-        return -3600 * sign(vel)
+        return BREAK_ACCELERATION * sign(vel)
     elif throttle == 0:
-        return -525 * sign(vel)
+        return COAST_ACCELERATION * sign(vel)
     else:
         return (a * min(abs(vel), THROTTLE_MID_SPEED) + b) * throttle
 

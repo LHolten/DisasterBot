@@ -35,7 +35,7 @@ class SkeletonAgent(BaseAgent):
         delta_time = time.time() - chrono_start
 
         if delta_time > 1 / 120:
-            self.logger.warn(f"Took too long to execute: {delta_time * 120 * 100}%.")
+            self.logger.warn(f"Took too long to execute: {delta_time * 120 * 100:.3f}%")
 
         return self.controls
 

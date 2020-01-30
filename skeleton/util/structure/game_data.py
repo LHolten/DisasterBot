@@ -8,7 +8,8 @@ from rlbot.utils.structures.game_data_struct import GameTickPacket, PlayerInfo, 
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 from rlbot.agents.base_agent import SimpleControllerState
 
-from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix
+from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix, \
+    box_shape_to_numpy
 from skeleton.util.game_values import BACK_WALL
 from skeleton.util.math import team_sign
 
@@ -212,6 +213,10 @@ class Player(PhysicsObject):
         self.supersonic = False
         self.team = 0
 
+        # hitbox info
+        self.hitbox = np.array([118, 84, 36])
+        self.hitbox_offset = np.array([13.88, 0, 20.75])
+
         # extra info
 
         # the moment in time the action happened
@@ -241,6 +246,7 @@ class Player(PhysicsObject):
     def read_game_car(self, game_car: PlayerInfo):
 
         super(Player, self).read_physics(game_car.physics)
+
         self.boost = game_car.boost
         self.jumped = game_car.jumped
         self.double_jumped = game_car.double_jumped
@@ -251,6 +257,9 @@ class Player(PhysicsObject):
         # This is a temporary workaround for the issue of has_wheel_contact being true in the air.
         if self.location[2] > 20 and (self.jumped or self.last_jumped):
             self.on_ground = False
+
+        self.hitbox = box_shape_to_numpy(game_car.hitbox)
+        self.hitbox_offset = vector3_to_numpy(game_car.hitbox_offset)
 
     def update_extra_game_data(self, time: float):
 
