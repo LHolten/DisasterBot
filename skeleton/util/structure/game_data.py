@@ -46,8 +46,6 @@ class GameData:
 
         # boost pads structured numpy array
         self.boost_pads: np.ndarray = []
-        self.large_pads: np.ndarray = []
-        self.small_pads: np.ndarray = []
 
         # goals
         own_goal_loc = np.array([0, BACK_WALL * team_sign(team), 0])
@@ -119,11 +117,9 @@ class GameData:
         """Reads an instance of FieldInfoPacket provided by the rlbot framework,
         and converts it's contents into our internal structure."""
 
-        if field_info.num_boosts != 0:
-            self.read_boost_pads(field_info.boost_pads, field_info.num_boosts)
+        self.read_boost_pads(field_info.boost_pads, field_info.num_boosts)
 
-        if field_info.num_goals != 0:
-            self.read_goals(field_info.goals, field_info.num_goals)
+        self.read_goals(field_info.goals, field_info.num_goals)
 
     def read_boost_pads(self, boost_pads: BoostPad * MAX_BOOSTS, num_boosts: int):
         """Reads a list BoostPad ctype objects from the field info,
@@ -138,9 +134,6 @@ class GameData:
 
         self.boost_pads = np.zeros(num_boosts, full_dtype)
         self.boost_pads[['location', 'is_full_boost']] = converted_boost_pads
-
-        self.large_pads = self.boost_pads[self.boost_pads['is_full_boost']]
-        self.small_pads = self.boost_pads[~self.boost_pads['is_full_boost']]
 
     def read_goals(self, goals: List[GoalInfo], num_goals: int):
 
