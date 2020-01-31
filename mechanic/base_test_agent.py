@@ -26,5 +26,5 @@ class BaseTestAgent(SkeletonAgent):
             self.initialized = True
 
         if self.initialized and self.mechanic.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait('done')
+            self.matchcomms.outgoing_broadcast.put_nowait('pass')
             self.initialized = False

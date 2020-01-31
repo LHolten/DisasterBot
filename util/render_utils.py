@@ -1,13 +1,15 @@
 import numpy as np
 
 
-def render_local_line_3d(renderer, local_line, origin_loc, origin_rot, color):
-    point1 = origin_rot.dot(local_line[0]) + origin_loc
-    point2 = origin_rot.dot(local_line[1]) + origin_loc
+def render_local_line_3d(renderer, local_line, origin_loc, origin_rot_matrix, color):
+    """Uses renderer.draw_line_3d to draw a line from local coordinates."""
+    point1 = origin_rot_matrix.dot(local_line[0]) + origin_loc
+    point2 = origin_rot_matrix.dot(local_line[1]) + origin_loc
     renderer.draw_line_3d(point1, point2, color)
 
 
 def render_hitbox(renderer, my_loc, my_rot, color, hitbox, hitbox_offset):
+    """Uses the renderer to draw a wireframe view of the car's hitbox."""
 
     signs = ([1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1])
 

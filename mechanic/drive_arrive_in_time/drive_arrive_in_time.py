@@ -50,7 +50,7 @@ class DriveArriveInTime(BaseMechanic):
 
         self.controls.throttle = throttle_velocity(current_velocity, desired_velocity)
 
-        # boost to  desired velocity
+        # boost to desired velocity
         self.controls.boost = not self.controls.handbrake and boost_velocity(
             current_velocity, desired_velocity)
 

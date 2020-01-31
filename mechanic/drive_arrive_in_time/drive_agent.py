@@ -24,15 +24,15 @@ class TestAgent(BaseTestAgent):
         hit_radius = self.game_data.ball.radius + np.min(np.abs(self.game_data.my_car.hitbox))
 
         # only accurate if we're already moving towards the target
-        velocity = np.array([np.linalg.norm(self.game_data.my_car.velocity)] * len(ball_prediction))
-        boost = np.array([self.game_data.my_car.boost] * len(ball_prediction))
+        velocity = np.array([np.linalg.norm(self.game_data.my_car.velocity)])
+        boost = np.array([self.game_data.my_car.boost])
 
-        future_ball_locations = ball_prediction["physics"]["location"]
-        distances = np.linalg.norm(future_ball_locations - my_car_loc, axis=1) - hit_radius
-        time_coordinates = ball_prediction["game_seconds"] - game_time
+        location_slices = ball_prediction["physics"]["location"]
+        distance_slices = np.linalg.norm(location_slices - my_car_loc, axis=1) - hit_radius
+        time_slices = ball_prediction["game_seconds"] - game_time
 
-        reachable = (distance_traveled_numpy(time_coordinates, velocity, boost) >
-                     distances) & (future_ball_locations[:, 2] < 120)
+        reachable = (distance_traveled_numpy(time_slices, velocity, boost) >
+                     distance_slices) & (location_slices[:, 2] < 120)
 
         filtered_prediction = ball_prediction[reachable]
 

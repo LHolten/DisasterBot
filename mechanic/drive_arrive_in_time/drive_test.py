@@ -51,7 +51,7 @@ from util.matchcomms_grader import MatchcommsGrader
 
 def make_default_playlist():
     match_config = make_match_config_with_bots(blue_bots=[current_path / 'drive_agent.cfg'])
-    exercise = RotationExercise(name='drive to ball', grader=MatchcommsGrader(),
+    exercise = RotationExercise(name='Hit the ball', grader=MatchcommsGrader(),
                                 match_config=match_config)
     return [exercise]
 

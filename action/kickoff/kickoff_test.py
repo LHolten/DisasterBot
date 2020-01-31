@@ -45,7 +45,7 @@ from util.matchcomms_grader import MatchcommsGrader
 
 def make_default_playlist():
     match_config = make_match_config_with_bots(blue_bots=[current_path / 'kickoff_agent.cfg'])
-    exercise = RotationExercise(name='kickoff', grader=MatchcommsGrader(),
+    exercise = RotationExercise(name='Kickoff', grader=MatchcommsGrader(),
                                 match_config=match_config)
     return [exercise]
 
