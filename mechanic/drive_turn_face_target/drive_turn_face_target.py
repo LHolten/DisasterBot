@@ -22,16 +22,10 @@ class DriveTurnFaceTarget(BaseMechanic):
         proportional_steer = 11 * yaw_angle_to_target
         derivative_steer = -1 / 3 * car_yaw_ang_vel
 
-        if yaw_angle_to_target >= 0:
-            if yaw_angle_to_target - car_yaw_ang_vel / 3 > PI / 5:
-                self.controls.handbrake = True
-            else:
-                self.controls.handbrake = False
-        elif yaw_angle_to_target < 0:
-            if yaw_angle_to_target - car_yaw_ang_vel / 3 < -PI / 5:
-                self.controls.handbrake = True
-            else:
-                self.controls.handbrake = False
+        if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 5:
+            self.controls.handbrake = True
+        else:
+            self.controls.handbrake = False
 
         self.controls.steer = clip(proportional_steer + derivative_steer)
         self.controls.throttle = 1
