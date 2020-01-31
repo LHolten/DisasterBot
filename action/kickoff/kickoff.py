@@ -2,7 +2,7 @@ import math
 from rlbot.agents.base_agent import SimpleControllerState
 from action.base_action import BaseAction
 
-from mechanic.drive import DriveTurnFaceTarget
+from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 
 class Kickoff(BaseAction):

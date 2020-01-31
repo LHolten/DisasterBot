@@ -2,7 +2,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 
 from action.base_action import BaseAction
 from util.boost_utils import closest_available_boost
-from mechanic.drive import DriveTurnFaceTarget
+from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 
 class CollectBoost(BaseAction):

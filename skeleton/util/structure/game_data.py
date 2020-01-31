@@ -7,7 +7,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
 from rlbot.utils.structures.game_data_struct import GameTickPacket, PlayerInfo, BallInfo, \
     GameInfo, Physics, BoostPadState, FieldInfoPacket, BoostPad, GoalInfo, Touch, \
-    DropShotInfo, MAX_BOOSTS
+    DropShotInfo, CollisionShape, MAX_BOOSTS
 
 from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix, \
     box_shape_to_numpy
@@ -88,6 +88,7 @@ class GameData:
 
         self.opponents = []
         self.teammates = []
+
         for i in range(num_cars):
             if i != self.index:
                 car = game_cars[i]
@@ -158,16 +159,18 @@ class GameData:
         if len(self.own_goals) == 1:
             self.own_goal = self.own_goals[0]
 
-    def read_ball_prediction_struct(self, ball_prediction: BallPrediction):
+    def read_ball_prediction_struct(self, ball_prediction_struct: BallPrediction):
         """Reads an instance of BallPrediction provided by the rlbot framework,
         and parses it's content into a structured numpy array."""
 
         dtype = np.dtype([('physics', [('location', '<f4', 3),
-                                       ('rotation', [('pitch', '<f4'), ('yaw', '<f4'), ('roll', '<f4')]),
+                                       ('rotation', '<f4', 3),
                                        ('velocity', '<f4', 3),
                                        ('angular_velocity', '<f4', 3)]),
                           ('game_seconds', '<f4')])
-        buffer = buf_from_mem(ctypes.addressof(ball_prediction.slices), dtype.itemsize * ball_prediction.num_slices, 0x100)
+
+        buffer = buf_from_mem(ctypes.addressof(ball_prediction_struct.slices),
+                              dtype.itemsize * ball_prediction_struct.num_slices, 0x100)
         self.ball_prediction = np.frombuffer(buffer, dtype)
 
         self.ball_prediction.flags.writeable = False
@@ -341,6 +344,9 @@ class Ball(PhysicsObject):
         self.damage_index = 0
         self.force_accum_recent = 0.0
 
+        # collision shape
+        self.radius = 92
+
     def read_game_ball(self, game_ball: BallInfo):
 
         super(Ball, self).read_physics(game_ball.physics)
@@ -360,6 +366,10 @@ class Ball(PhysicsObject):
         self.damage_index = drop_shot_info.damage_index
         self.force_accum_recent = drop_shot_info.force_accum_recent
 
+    def read_collision_shape(self, collision_shape: CollisionShape):
+
+        self.radius = collision_shape.sphere.diameter / 2
+
 
 class Goal:
 
@@ -373,19 +383,20 @@ def main():
 
     from timeit import timeit
 
-    class TestThing(GameData):
+    class TestGameData(GameData):
         def __init__(self):
             pass
 
-    test = TestThing()
+    game_data = TestGameData()
 
-    ball_thing = BallPrediction()
+    ball_prediction = BallPrediction()
+    ball_prediction.num_slices = 360
 
     def test_function():
-        test.read_ball_prediction_struct(ball_thing)
+        game_data.read_ball_prediction_struct(ball_prediction)
 
     fps = 120
-    n_times = 100000
+    n_times = 10000
     time_taken = timeit(test_function, number=n_times)
     percentage = round(time_taken * fps / n_times * 100, 5)
 
