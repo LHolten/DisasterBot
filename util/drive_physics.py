@@ -1,4 +1,5 @@
 import math
+from scipy.special import lambertw
 
 THROTTLE_ACCELERATION_0 = 1600
 THROTTLE_ACCELERATION_1400 = 160
@@ -67,6 +68,13 @@ def time_to_reach_velocity_0_1400(v: float, v0: float, is_boosting: bool):
     return math.log((a * v + b2) / (a * v0 + b2)) / a
 
 
+def time_to_travel_distance_0_1400(d: float, v: float, boost: bool):
+    b2 = b + BOOST_ACCELERATION if boost else b
+    return (-d * a * a - b2 * lambertw(
+        -((b2 + a * v) * math.exp(-(a * (v + a * d)) / b - 1)) / b2,
+        tol=1e-3).real - a * v - b2) / (a * b2)
+
+
 # for when the only acceleration that applies is from boost.
 def distance_traveled_1400_2300_boost(t: float, v0: float):
     return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
@@ -84,6 +92,10 @@ def time_to_reach_distance_1400_2300_boost(d: float, v: float):
     return -(math.sqrt(2 * BOOST_ACCELERATION * d + math.pow(v, 2)) + v) / a
 
 
+def time_to_travel_distance_1400_2300(d: float, v: float):
+    return (-v + math.sqrt(2 * BOOST_ACCELERATION * d + math.pow(v, 2))) / BOOST_ACCELERATION
+
+
 # for when the velocity is opposite the throttle direction,
 # only the breaking acceleration applies, boosting has no effect.
 # assuming throttle is positive, flip velocity signs if otherwise.
@@ -99,8 +111,20 @@ def time_to_reach_velocity_negative(v: float, v0: float):
     return (v - v0) / BREAK_ACCELERATION
 
 
+def time_to_reach_distance_negative(d: float, v: float):
+    return -(math.sqrt(2 * BREAK_ACCELERATION * d + math.pow(v, 2)) + v) / a
+
+
+def time_to_travel_distance_negative(d: float, v: float):
+    return (-v + math.sqrt(2 * BREAK_ACCELERATION * d + math.pow(v, 2))) / BREAK_ACCELERATION
+
+
 def distance_traveled_zero_acceleration(t: float, v0: float):
     return t * v0
+
+
+def time_to_travel_distance_zero_acceleration(d: float, v0: float):
+    return d / v0
 
 
 # boost consumption

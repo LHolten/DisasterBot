@@ -1,3 +1,6 @@
+import math
+
+PI = math.pi
 
 
 def clip(x: float, lower_cap: float = -1, higher_cap: float = 1):
@@ -8,6 +11,15 @@ def clip(x: float, lower_cap: float = -1, higher_cap: float = 1):
         return higher_cap
     else:
         return x
+
+
+def normalize_angle(angle, pi_unit=PI):
+    """Limits any angle to [-pi, pi] range, example: normalize_angle(270, 180) = -90"""
+    if abs(angle) >= 2 * pi_unit:
+        angle -= abs(angle) // (2 * pi_unit) * 2 * pi_unit * sign(angle)
+    if abs(angle) > pi_unit:
+        angle -= 2 * pi_unit * sign(angle)
+    return angle
 
 
 def sign(x: float):

@@ -21,7 +21,7 @@ class TestAgent(BaseTestAgent):
 
         my_car_loc = self.game_data.my_car.location
         game_time = self.game_data.time
-        hit_radius = self.game_data.ball.radius + np.min(np.abs(self.game_data.my_car.hitbox))
+        hit_radius = self.game_data.ball.radius + np.min(np.abs(self.game_data.my_car.hitbox)) / 2
 
         # only accurate if we're already moving towards the target
         velocity = np.array([np.linalg.norm(self.game_data.my_car.velocity)])

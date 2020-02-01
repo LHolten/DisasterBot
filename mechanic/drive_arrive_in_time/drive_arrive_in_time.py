@@ -24,10 +24,10 @@ class DriveArriveInTime(BaseMechanic):
         # PD for steer
         yaw_angle_to_target = math.atan2(target_in_local_coords[1], target_in_local_coords[0])
         car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
-        car_yaw_ang_vel = car_ang_vel_local_coords[2]
+        car_yaw_ang_vel = -car_ang_vel_local_coords[2]
 
         proportional_steer = 11 * yaw_angle_to_target
-        derivative_steer = -1 / 3 * car_yaw_ang_vel
+        derivative_steer = 1 / 3 * car_yaw_ang_vel
 
         if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 5:
             self.controls.handbrake = True

@@ -101,7 +101,11 @@ class GameData:
         buffer = buf_from_mem(ctypes.addressof(game_boosts), dtype.itemsize * num_boosts, 0x100)
         converted_game_boosts = np.frombuffer(buffer, dtype)
 
-        self.boost_pads[['is_active', 'timer']] = converted_game_boosts
+        try:
+            self.boost_pads[['is_active', 'timer']] = converted_game_boosts
+        except TypeError as e:
+            print("Make sure you have called SkeletonAgent's initialize_agent()")
+            raise e
 
     def read_game_info(self, game_info: GameInfo):
 
