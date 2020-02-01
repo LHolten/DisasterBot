@@ -155,7 +155,7 @@ def distance_traveled(time_window: float, initial_velocity: float, boost_amount:
             time_left = time_left - time_0_vel
             velocity = 0
 
-    if 0 <= velocity < THROTTLE_MID_SPEED:
+    if velocity < THROTTLE_MID_SPEED:
 
         if boost_left > 0:
             time_0_boost = time_to_reach_0_boost(boost_left)
@@ -188,7 +188,7 @@ def distance_traveled(time_window: float, initial_velocity: float, boost_amount:
                 time_left = time_left - time_1400_vel
                 velocity = THROTTLE_MID_SPEED
 
-    if THROTTLE_MID_SPEED <= velocity < MAX_CAR_SPEED:
+    if velocity < MAX_CAR_SPEED:
 
         if boost_left > 0:
             time_0_boost = time_to_reach_0_boost(boost_left)

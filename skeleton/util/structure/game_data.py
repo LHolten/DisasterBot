@@ -91,7 +91,9 @@ class GameData:
             if i != self.index:
                 car = game_cars[i]
                 team = self.opponents if car.team != self.my_car.team else self.teammates
-                team.append(Player().read_game_car(car))
+                car_obj = Player.__new__(Player)
+                car_obj.read_game_car(car)
+                team.append(car_obj)
 
     def read_game_boosts(self, game_boosts: BoostPadState * MAX_BOOSTS, num_boosts: int):
         """Reads a list BoostPadState ctype objects from the game tick packet,
@@ -129,12 +131,13 @@ class GameData:
         """Reads a list BoostPad ctype objects from the field info,
         and converts it's contents into a structured numpy array."""
 
-        dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', '?')], True)
+        dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', 'bool')], True)
+
         buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
         converted_boost_pads = np.frombuffer(buffer, dtype)
 
-        full_dtype = [('location', '<f4', 3), ('is_full_boost', '?'),
-                      ('is_active', '?'), ('timer', '<f4')]
+        full_dtype = [('location', '<f4', 3), ('is_full_boost', 'bool'),
+                      ('is_active', 'bool'), ('timer', '<f4')]
 
         self.boost_pads = np.zeros(num_boosts, full_dtype)
         self.boost_pads[['location', 'is_full_boost']] = converted_boost_pads

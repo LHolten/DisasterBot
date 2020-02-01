@@ -31,9 +31,17 @@ class SkeletonAgentTest(SkeletonAgent):
 def main():
     """Testing for errors and performance"""
 
+    # import cProfile
+    # import pstats
+    # import io
+    # from pstats import SortKey
+
+    # pr = cProfile.Profile()
+    # pr.enable()
+
     agent = SkeletonAgentTest("test_agent", 0, 0)
     game_tick_packet = GameTickPacket()
-    game_tick_packet.num_cars = 10
+    game_tick_packet.num_cars = 6
     game_tick_packet.num_boost = MAX_BOOSTS
     game_tick_packet.num_tiles = MAX_GOALS
 
@@ -51,6 +59,13 @@ def main():
 
     print(f"Took {time_taken} seconds to run {n_times} times.")
     print(f"That's {percentage} % of our time budget.")
+
+    # pr.disable()
+    # s = io.StringIO()
+    # sortby = SortKey.CUMULATIVE
+    # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    # ps.print_stats()
+    # print(s.getvalue())
 
 
 if __name__ == "__main__":

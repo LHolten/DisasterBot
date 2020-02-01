@@ -1,20 +1,17 @@
 import math
 import numpy as np
+
 from rlbot.utils.structures.game_data_struct import Vector3, Rotator, BoxShape
 
 
-def vector3_to_numpy(vector3: Vector3):
+def vector3_to_numpy(vector: Vector3):
     """Converts Vector3 to numpy array"""
-    a = np.array([vector3.x, vector3.y, vector3.z])
-    a.flags.writeable = False  # this makes the numpy array immutable
-    return a
+    return np.array([vector.x, vector.y, vector.z])
 
 
 def rotator_to_numpy(rotator: Rotator):
     """Converts rotator to numpy array"""
-    a = np.array([rotator.pitch, rotator.yaw, rotator.roll])
-    a.flags.writeable = False
-    return a
+    return np.array([rotator.pitch, rotator.yaw, rotator.roll])
 
 
 def rotator_to_matrix(rotator: Rotator):
