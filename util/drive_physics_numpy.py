@@ -33,7 +33,7 @@ class VelocityRange:
         raise NotImplementedError
 
     @staticmethod
-    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
+    def time_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         raise NotImplementedError
 
     @classmethod
@@ -41,15 +41,16 @@ class VelocityRange:
         """Advances the state to the soonest phase end."""
         mask = state['vel'] < cls.max_speed
 
-        time = cls.time_to_reach_velocity(cls.max_speed, state['vel'], boost)
+        time = cls.time_reach_velocity(cls.max_speed, state['vel'], boost)
         time = np.minimum(time, state['time'])
 
         if boost:
             time = np.minimum(time, state['boost'] / BOOST_CONSUMPTION_RATE)
-            state['boost'] = np.where(mask, state['boost'] - time * BOOST_CONSUMPTION_RATE, state['boost'])
+            state['boost'] = np.where(mask, state['boost'] - time *
+                                      BOOST_CONSUMPTION_RATE, state['boost'])
 
-        state['dist'] = np.where(mask, state['dist'] + cls.distance_traveled(time, state['vel'], boost),
-                                 state['dist'])
+        state['dist'] = np.where(mask, state['dist'] +
+                                 cls.distance_traveled(time, state['vel'], boost), state['dist'])
         state['vel'] = np.where(mask, cls.velocity_reached(time, state['vel'], boost), state['vel'])
         state['time'] = np.where(mask, state['time'] - time, state['time'])
 
@@ -69,7 +70,7 @@ class Velocity0To1400(VelocityRange):
         return (b * np.expm1(a * t)) / a + v0 * np.exp(a * t)
 
     @staticmethod
-    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
+    def time_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         b = get_acceleration_offset(boost)
         return np.log((a * v + b) / (a * v0 + b)) / a
 
@@ -87,7 +88,7 @@ class Velocity1400To2300(Velocity0To1400):
         return BOOST_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
+    def time_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return (v - v0) / BOOST_ACCELERATION
 
 
@@ -106,7 +107,7 @@ class VelocityNegative(VelocityRange):
         return BREAK_ACCELERATION * t + v0
 
     @staticmethod
-    def time_to_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
+    def time_reach_velocity(v: np.ndarray, v0: np.ndarray, boost: bool) -> np.ndarray:
         return (v - v0) / BREAK_ACCELERATION
 
 

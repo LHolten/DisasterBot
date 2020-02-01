@@ -6,7 +6,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics import throttle_acc
+from util.drive_physics import throttle_accel
 from util.render_utils import render_hitbox
 
 PI = math.pi
@@ -84,7 +84,7 @@ def throttle_velocity(vel, dspeed, lthrottle=0):
     """PD throttle to velocity"""
     dacc = (dspeed - vel) / DT * sign(dspeed)
     if dacc > 0:
-        return clip(dacc / max(throttle_acc(vel, 1), 0.001)) * sign(dspeed)
+        return clip(dacc / max(throttle_accel(vel, 1), 0.001)) * sign(dspeed)
     elif -3600 < dacc <= 0:
         return 0
     else:
