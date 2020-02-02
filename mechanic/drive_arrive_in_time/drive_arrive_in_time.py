@@ -6,7 +6,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics import throttle_accel
+from util.drive_physics import throttle_accel, BOOST_ACCELERATION
 from util.render_utils import render_hitbox
 
 PI = math.pi
@@ -18,7 +18,7 @@ class DriveArriveInTime(BaseMechanic):
     def step(self, car, target_loc, time) -> SimpleControllerState:
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
-        car_local_velocity = car.velocity.dot(car.rotation_matrix)
+        car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
         distance = np.linalg.norm(target_in_local_coords)
 
         # PD for steer
@@ -37,27 +37,25 @@ class DriveArriveInTime(BaseMechanic):
         self.controls.steer = clip(proportional_steer + derivative_steer)
 
         # arrive in time
-        desired_velocity = clip(distance / max(time - 1 / 120, 0.001), -2300, 2300)
+        desired_vel = clip(distance / max(time - DT, 1e-5), -2300, 2300)
 
         # throttle to desired velocity
-        current_velocity = car_local_velocity[0]
-
-        self.controls.throttle = throttle_velocity(current_velocity, desired_velocity)
+        self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel)
 
         # boost to desired velocity
         self.controls.boost = not self.controls.handbrake and boost_velocity(
-            current_velocity, desired_velocity)
+            car_forward_velocity, desired_vel, self.controls.throttle)
 
         # This makes sure we're not powersliding
         # if the car is spinning the opposite way we're steering towards
         if car_ang_vel_local_coords[2] * self.controls.steer < 0:
             self.controls.handbrake = False
         # and also not boosting if we're sliding the opposite way we're throttling towards.
-        if car_local_velocity[0] * self.controls.throttle < 0:
+        if car_forward_velocity * self.controls.throttle < 0:
             self.controls.handbrake = self.controls.boost = False
 
         # rendering
-        strings = [f"desired_velocity : {desired_velocity:.2f}",
+        strings = [f"desired_vel : {desired_vel:.2f}",
                    f"time : {time:.2f}",
                    f"throttle : {self.controls.throttle:.2f}"]
         color = self.agent.renderer.white()
@@ -67,12 +65,14 @@ class DriveArriveInTime(BaseMechanic):
             self.agent.renderer.draw_string_2d(20, 150 + i * 30, 2, 2, string, color)
         self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
         self.agent.renderer.draw_line_3d(car.location, target_loc, color)
+        # hitbox rendering
         render_hitbox(self.agent.renderer, car.location, car.rotation_matrix,
-                      color, car.hitbox, car.hitbox_offset)
+                      color, car.hitbox_corner, car.hitbox_offset)
+        self.agent.renderer.draw_rect_3d(car.location, 20, 20, True, self.agent.renderer.grey())
         self.agent.renderer.end_rendering()
 
         # updating status
-        if distance < 200 and abs(time) < 0.1:
+        if distance < 40 and abs(time) < 0.1:
             self.finished = True
         else:
             self.finished = False
@@ -80,25 +80,21 @@ class DriveArriveInTime(BaseMechanic):
         return self.controls
 
 
-def throttle_velocity(vel, dspeed, lthrottle=0):
+def throttle_velocity(vel, desired_vel):
     """PD throttle to velocity"""
-    dacc = (dspeed - vel) / DT * sign(dspeed)
-    if dacc > 0:
-        return clip(dacc / max(throttle_accel(vel, 1), 0.001)) * sign(dspeed)
-    elif -3600 < dacc <= 0:
+    desired_accel = (desired_vel - vel) / DT * sign(desired_vel)
+    if desired_accel > 0:
+        return clip(desired_accel / max(throttle_accel(vel, 1), 0.001)) * sign(desired_vel)
+    elif -3600 < desired_accel <= 0:
         return 0
     else:
         return -1
 
 
-def boost_velocity(vel, dvel, lboost=0):
+def boost_velocity(vel, desired_vel, throttle):
     """P velocity boost control"""
-    rel_vel = dvel - vel
-    if vel < 1400:
-        if dvel < 0:
-            threshold = 4600
-        else:
-            threshold = 250
+    if desired_vel < vel or vel < 0:
+        return False
     else:
-        threshold = 30
-    return rel_vel > threshold
+        desired_accel = (desired_vel - vel) / DT
+        return desired_accel - throttle_accel(vel, throttle) > BOOST_ACCELERATION * 8

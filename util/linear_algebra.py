@@ -8,4 +8,8 @@ def norm(vec: np.ndarray):
 
 def normalize(vec: np.ndarray):
     """Returns a normalized vector of norm 1."""
-    return vec / max(norm(vec), 1e-9)
+    return vec / max(norm(vec), 1e-8)
+
+
+def normalize_batch(vec: np.ndarray):
+    return vec / np.maximum(np.linalg.norm(vec), 1e-8)

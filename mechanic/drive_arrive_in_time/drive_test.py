@@ -11,7 +11,7 @@ from rlbottraining.rng import SeededRandomNumberGenerator
 from rlbottraining.training_exercise import TrainingExercise
 
 
-class RotationExercise(TrainingExercise):
+class BallHitExercise(TrainingExercise):
 
     def on_briefing(self) -> Optional[Grade]:
         self.grader.matchcomms = self.get_matchcomms()
@@ -37,7 +37,7 @@ class RotationExercise(TrainingExercise):
         random_ang_vel = Vector3(rng.uniform(-3, 3), rng.uniform(-3, 3), rng.uniform(-3, 3))
 
         ball_state = BallState(physics=Physics(location=random_position, velocity=random_velocity,
-                                               angular_velocity=Vector3(0, 0, 0)))
+                                               angular_velocity=random_ang_vel))
 
         return GameState(ball=ball_state, cars={0: car_state})
 
@@ -51,8 +51,8 @@ from util.matchcomms_grader import MatchcommsGrader
 
 def make_default_playlist():
     match_config = make_match_config_with_bots(blue_bots=[current_path / 'drive_agent.cfg'])
-    exercise = RotationExercise(name='Hit the ball', grader=MatchcommsGrader(),
-                                match_config=match_config)
+    exercise = BallHitExercise(name='Hit the ball', grader=MatchcommsGrader(),
+                               match_config=match_config)
     return [exercise]
 
 

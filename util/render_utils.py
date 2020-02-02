@@ -8,13 +8,13 @@ def render_local_line_3d(renderer, local_line, origin_loc, origin_rot_matrix, co
     renderer.draw_line_3d(point1, point2, color)
 
 
-def render_hitbox(renderer, my_loc, my_rot, color, hitbox, hitbox_offset):
+def render_hitbox(renderer, my_loc, my_rot, color, hitbox_corner, hitbox_offset):
     """Uses the renderer to draw a wireframe view of the car's hitbox."""
 
     signs = ([1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1])
 
     for s in signs:
-        point = hitbox / 2 * np.array(s)
+        point = hitbox_corner * np.array(s)
         for i in range(3):
             ss = np.array([1, 1, 1])
             ss[i] *= -1

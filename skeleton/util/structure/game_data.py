@@ -28,6 +28,7 @@ class GameData:
         self.name = name
         self.index = index
         self.team = team
+        self.team_sign = team_sign(team)
 
         # keeping the original packet is sometimes useful
         self.game_tick_packet = GameTickPacket()
@@ -48,8 +49,8 @@ class GameData:
         self.boost_pads: np.ndarray = []
 
         # goals
-        own_goal_loc = np.array([0, BACK_WALL * team_sign(team), 0])
-        own_goal_dir = np.array([0, team_sign(team), 0])
+        own_goal_loc = np.array([0, BACK_WALL * self.team_sign, 0])
+        own_goal_dir = np.array([0, self.team_sign, 0])
 
         self.opp_goal = Goal(own_goal_loc * -1, own_goal_dir * -1)
         self.own_goal = Goal(own_goal_loc, own_goal_dir)
@@ -223,8 +224,8 @@ class Player(PhysicsObject):
         self.team = 0
 
         # hitbox info
-        self.hitbox = np.array([118, 84, 36])
-        self.hitbox_offset = np.array([13.88, 0, 20.75])
+        self.hitbox_corner = np.array([59, 42, 18])
+        self.hitbox_offset = np.array([13.87566, 0, 20.755])
 
         # extra info
 
@@ -263,11 +264,11 @@ class Player(PhysicsObject):
         self.supersonic = game_car.is_super_sonic
         self.team = game_car.team
 
-        # This is a temporary workaround for the issue of has_wheel_contact being true in the air.
-        if self.location[2] > 20 and (self.jumped or self.last_jumped):
-            self.on_ground = False
+        # # This is a temporary workaround for the issue of has_wheel_contact being true in the air.
+        # if self.location[2] > 20 and (self.jumped or self.last_jumped):
+        #     self.on_ground = False
 
-        self.hitbox = box_shape_to_numpy(game_car.hitbox)
+        self.hitbox_corner = box_shape_to_numpy(game_car.hitbox) / 2
         self.hitbox_offset = vector3_to_numpy(game_car.hitbox_offset)
 
     def update_extra_game_data(self, time: float):
