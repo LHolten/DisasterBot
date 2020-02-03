@@ -43,10 +43,10 @@ class GameData:
         self.ball = Ball()
 
         # ball prediction structured numpy array
-        self.ball_prediction: np.ndarray = []
+        self.ball_prediction: np.ndarray = np.empty(())
 
         # boost pads structured numpy array
-        self.boost_pads: np.ndarray = []
+        self.boost_pads: np.ndarray = np.empty(())
 
         # goals
         own_goal_loc = np.array([0, BACK_WALL * self.team_sign, 0])
@@ -92,9 +92,7 @@ class GameData:
             if i != self.index:
                 car = game_cars[i]
                 team = self.opponents if car.team != self.my_car.team else self.teammates
-                car_obj = Player.__new__(Player)
-                car_obj.read_game_car(car)
-                team.append(car_obj)
+                team.append(Player.minimal_from_car(car))
 
     def read_game_boosts(self, game_boosts: BoostPadState * MAX_BOOSTS, num_boosts: int):
         """Reads a list BoostPadState ctype objects from the game tick packet,
@@ -132,13 +130,13 @@ class GameData:
         """Reads a list BoostPad ctype objects from the field info,
         and converts it's contents into a structured numpy array."""
 
-        dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', 'bool')], True)
+        dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', '?')], True)
 
         buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
         converted_boost_pads = np.frombuffer(buffer, dtype)
 
-        full_dtype = [('location', '<f4', 3), ('is_full_boost', 'bool'),
-                      ('is_active', 'bool'), ('timer', '<f4')]
+        full_dtype = [('location', 'float', 3), ('is_full_boost', 'bool'),
+                      ('is_active', 'bool'), ('timer', 'float')]
 
         self.boost_pads = np.zeros(num_boosts, full_dtype)
         self.boost_pads[['location', 'is_full_boost']] = converted_boost_pads
@@ -252,6 +250,12 @@ class Player(PhysicsObject):
         self.last_jumped = False
         self.last_on_ground = False
         self.controls_history = [SimpleControllerState(), SimpleControllerState()]
+
+    @classmethod
+    def minimal_from_car(cls, game_car: PlayerInfo):
+        car_obj = cls.__new__(cls)
+        car_obj.read_game_car(game_car)
+        return car_obj
 
     def read_game_car(self, game_car: PlayerInfo):
 
