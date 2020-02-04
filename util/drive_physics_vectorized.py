@@ -1,5 +1,6 @@
 import math
 from scipy.special import lambertw
+from numba import vectorize, float64, boolean
 
 THROTTLE_ACCELERATION_0 = 1600
 THROTTLE_ACCELERATION_1400 = 160
@@ -18,54 +19,19 @@ a = -(THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 b = THROTTLE_ACCELERATION_0
 
 
-def sign(x: float):
-    return 1 if x >= 0 else -1
-
-
-def throttle_accel(vel: float, throttle: float = 1):
-    throttle = min(1, max(-1, throttle))
-    if throttle * vel < 0:
-        return -BREAK_ACCELERATION * sign(vel)
-    elif throttle == 0:
-        return -COAST_ACCELERATION * sign(vel)
-    elif abs(vel) < THROTTLE_MID_SPEED:
-        return (a * min(abs(vel), THROTTLE_MID_SPEED) + b) * throttle
-    else:
-        return 0
-
-
-def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: float):
-
-    DT = 1 / 60
-    time = 0
-    distance = 0
-    velocity = v_0
-    boost = initial_boost
-    acceleration = 0
-
-    while (distance < max_distance):
-        to_boost = sign(velocity) and boost > 0
-        acceleration = throttle_accel(velocity) + to_boost * BOOST_ACCELERATION
-        velocity = min(velocity + acceleration * DT, MAX_CAR_SPEED)
-        distance = distance + velocity * DT + 0.5 * acceleration * DT * DT
-        boost -= to_boost * BOOST_CONSUMPTION_RATE * DT
-        time += DT
-        if (time > 6):
-            break
-
-    return time
-
-
+@vectorize([float64(float64, float64, boolean)], cache=True)
 def distance_traveled_0_1400(t: float, v0: float, is_boosting: bool):
     b2 = b + is_boosting * BOOST_ACCELERATION
     return (b2 * (-a * t + math.expm1(a * t)) + a * v0 * math.expm1(a * t)) / math.pow(a, 2)
 
 
+@vectorize([float64(float64, float64, boolean)], cache=True)
 def velocity_reached_0_1400(t: float, v0: float, is_boosting: bool):
     b2 = b + is_boosting * BOOST_ACCELERATION
     return (b2 * math.expm1(a * t)) / a + v0 * math.exp(a * t)
 
 
+@vectorize([float64(float64, float64, boolean)], cache=True)
 def time_reach_velocity_0_1400(v: float, v0: float, is_boosting: bool):
     b2 = b + is_boosting * BOOST_ACCELERATION
     return math.log((a * v + b2) / (a * v0 + b2)) / a
@@ -79,22 +45,27 @@ def time_travel_distance_0_1400(d: float, v: float, boost: bool):
 
 
 # for when the only acceleration that applies is from boost.
+@vectorize([float64(float64, float64)], cache=True)
 def distance_traveled_1400_2300_boost(t: float, v0: float):
     return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def velocity_reached_1400_2300_boost(t: float, v0: float):
     return BOOST_ACCELERATION * t + v0
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_reach_velocity_1400_2300_boost(v: float, v0: float):
     return (v - v0) / BOOST_ACCELERATION
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_reach_distance_1400_2300_boost(d: float, v: float):
     return -(math.sqrt(2 * BOOST_ACCELERATION * d + math.pow(v, 2)) + v) / a
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_travel_distance_1400_2300(d: float, v: float):
     return (-v + math.sqrt(2 * BOOST_ACCELERATION * d + math.pow(v, 2))) / BOOST_ACCELERATION
 
@@ -102,44 +73,55 @@ def time_travel_distance_1400_2300(d: float, v: float):
 # for when the velocity is opposite the throttle direction,
 # only the breaking acceleration applies, boosting has no effect.
 # assuming throttle is positive, flip velocity signs if otherwise.
+@vectorize([float64(float64, float64)], cache=True)
 def distance_traveled_negative(t: float, v0: float):
     return t * (BREAK_ACCELERATION * t + 2 * v0) / 2
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def velocity_reached_negative(t: float, v0: float):
     return BREAK_ACCELERATION * t + v0
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_reach_velocity_negative(v: float, v0: float):
     return (v - v0) / BREAK_ACCELERATION
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_reach_distance_negative(d: float, v: float):
     return -(math.sqrt(2 * BREAK_ACCELERATION * d + math.pow(v, 2)) + v) / a
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_travel_distance_negative(d: float, v: float):
     return (-v + math.sqrt(2 * BREAK_ACCELERATION * d + math.pow(v, 2))) / BREAK_ACCELERATION
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def distance_traveled_zero_acceleration(t: float, v0: float):
     return t * v0
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def time_travel_distance_zero_acceleration(d: float, v0: float):
     return d / v0
 
 
 # boost consumption
+@vectorize([float64(float64)], cache=True)
 def time_reach_0_boost(boost_amount: float):
     return boost_amount / BOOST_CONSUMPTION_RATE
 
 
+@vectorize([float64(float64, float64)], cache=True)
 def boost_reached(time: float, initial_boost_amount: float):
     return max(0, initial_boost_amount - time * BOOST_CONSUMPTION_RATE)
 
 
-def distance_traveled(time_window: float, initial_velocity: float, boost_amount: float):
+@vectorize([float64(float64, float64, float64)], cache=True)
+def distance_traveled_vectorized(time_window: float, initial_velocity: float,
+                                 boost_amount: float):
     """Returns the max distance driven forward using boost, this allows any starting velocity
       assuming we're not using boost when going backwards and using it otherwise."""
 
@@ -219,7 +201,9 @@ def distance_traveled(time_window: float, initial_velocity: float, boost_amount:
     return distance
 
 
-def time_reach_velocity(desired_velocity: float, initial_velocity: float, boost_amount: float):
+@vectorize([float64(float64, float64, float64)], cache=True)
+def time_reach_velocity_vectorized(desired_velocity: float, initial_velocity: float,
+                                   boost_amount: float):
 
     time = 0
     boost_left = boost_amount
@@ -295,15 +279,16 @@ def time_reach_velocity(desired_velocity: float, initial_velocity: float, boost_
 def main():
 
     from timeit import timeit
+    import numpy as np
 
-    time = 1
-    initial_velocity = -400
-    boost_amount = 30
+    time = np.array([range(0, 360)]) / 60
+    initial_velocity = np.array([range(-180, 180)]) * 12
+    boost_amount = np.array([range(0, 360)]) / 360
 
     def test_function():
-        return distance_traveled(time, initial_velocity, boost_amount)
+        return distance_traveled_vectorized(time, initial_velocity, boost_amount)
 
-    print(test_function())
+    # print(test_function())
 
     fps = 120
     n_times = 1000

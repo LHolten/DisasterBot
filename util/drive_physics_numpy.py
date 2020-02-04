@@ -128,9 +128,9 @@ def main():
 
     from timeit import timeit
 
-    time = np.array([1.821725257142, 2] * 180)
-    initial_velocity = np.array([-2300, -400] * 180)
-    boost_amount = np.array([0, 30] * 180)
+    time = np.array([range(0, 360)]) / 60
+    initial_velocity = np.array([range(-180, 180)]) * 12
+    boost_amount = np.array([range(0, 360)]) / 360
 
     def test_function():
         return distance_traveled_numpy(time, initial_velocity, boost_amount)

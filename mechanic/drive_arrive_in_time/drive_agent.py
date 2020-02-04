@@ -3,7 +3,6 @@ import numpy as np
 from mechanic.base_test_agent import BaseTestAgent
 from mechanic.drive_arrive_in_time import DriveArriveInTime
 
-from util.drive_physics_numpy import distance_traveled_numpy
 from util.collision_utils import box_ball_collision_distance, box_ball_location_on_collision
 
 
@@ -13,6 +12,11 @@ class TestAgent(BaseTestAgent):
         return DriveArriveInTime(self)
 
     def get_mechanic_controls(self):
+
+        if not hasattr(self, 'distance_traveled'):
+            # importing compiled numba functions late works better.
+            from util.drive_physics_vectorized import distance_traveled_vectorized
+            self.distance_traveled_vectorized = distance_traveled_vectorized
 
         ball_prediction = self.game_data.ball_prediction
 
@@ -32,7 +36,7 @@ class TestAgent(BaseTestAgent):
                                                       self.game_data.ball.radius)
         time_slices = ball_prediction["game_seconds"] - self.game_data.time
 
-        reachable = (distance_traveled_numpy(time_slices, velocity, boost) >
+        reachable = (self.distance_traveled_vectorized(time_slices, velocity, boost) >
                      distance_slices) & (location_slices[:, 2] < 120)
 
         filtered_prediction = ball_prediction[reachable]
