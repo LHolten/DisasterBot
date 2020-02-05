@@ -41,7 +41,7 @@ class VelocityRange:
         raise NotImplementedError
 
     @classmethod
-    def wrap(cls):
+    def wrap_distance_state_step(cls):
         """Advances the state to the soonest phase end."""
 
         cls_max_speed = cls.max_speed
@@ -50,7 +50,7 @@ class VelocityRange:
         cls_time_reach_velocity = cls.time_reach_velocity
 
         if cls.use_boost:
-            def process(state: State) -> State:
+            def distance_state_step(state: State) -> State:
                 if cls_max_speed <= state.vel or state.time == 0.:
                     return state
 
@@ -63,11 +63,11 @@ class VelocityRange:
 
                 if t_boost < t_vel:
                     t = t_boost
-                    vel = cls_velocity_reached(t, state.vel)
+                    vel = cls_velocity_reached(t_boost, state.vel)
                     boost = 0.
                 else:
                     t = t_vel
-                    vel = 0
+                    vel = cls_max_speed
                     boost = state.boost - t * BOOST_CONSUMPTION_RATE
 
                 dist = state.dist + cls_distance_traveled(t, state.vel)
@@ -75,7 +75,7 @@ class VelocityRange:
 
                 return State(vel, boost, time, dist)
         else:
-            def process(state: State) -> State:
+            def distance_state_step(state: State) -> State:
                 if cls_max_speed <= state.vel or state.time == 0.:
                     return state
 
@@ -90,7 +90,7 @@ class VelocityRange:
 
                 return State(cls_max_speed, state.boost, time, dist)
 
-        return fast_jit(process)
+        return fast_jit(distance_state_step)
 
 
 class Velocity0To1400(VelocityRange):
@@ -180,10 +180,10 @@ class VelocityNegative(VelocityRange):
         return (v - v0) / BREAK_ACCELERATION
 
 
-step1 = VelocityNegative.wrap()
-step2 = Velocity0To1400Boost.wrap()
-step3 = Velocity0To1400.wrap()
-step4 = Velocity1400To2300.wrap()
+step1 = VelocityNegative.wrap_distance_state_step()
+step2 = Velocity0To1400Boost.wrap_distance_state_step()
+step3 = Velocity0To1400.wrap_distance_state_step()
+step4 = Velocity1400To2300.wrap_distance_state_step()
 
 
 @jit(float64(float64, float64, float64), nopython=True, fastmath=True)
