@@ -12,7 +12,7 @@ BREAK_ACCELERATION = 3500.
 
 MAX_CAR_SPEED = 2300.
 
-BOOST_CONSUMPTION_RATE = 33.333  # per second
+BOOST_CONSUMPTION_RATE = 33.3  # per second
 
 # constants of the acceleration between 0 to 1400 velocity: acceleration = a * velocity + b
 a = - (THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
@@ -57,11 +57,11 @@ class VelocityRange:
                 t_boost = state.boost / BOOST_CONSUMPTION_RATE
                 t_vel = cls_time_reach_velocity(cls_max_speed, state.vel)
 
-                if state.time <= t_boost and state.time <= t_vel:
-                    dist = state.dist + cls_distance_traveled(state.time, state.vel)
-                    return State(0., 0., 0., dist)
+                if t_boost <= t_vel:
+                    if state.time <= t_boost:
+                        dist = state.dist + cls_distance_traveled(state.time, state.vel)
+                        return State(0., 0., 0., dist)
 
-                if t_boost < t_vel:
                     t = t_boost
                     vel = cls_velocity_reached(t_boost, state.vel)
                     boost = 0.
