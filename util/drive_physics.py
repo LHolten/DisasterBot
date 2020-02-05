@@ -18,6 +18,8 @@ BOOST_CONSUMPTION_RATE = 33.333  # per second
 a = - (THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 b = THROTTLE_ACCELERATION_0
 
+fast_jit = jit(nopython=True, fastmath=True)
+
 
 State = namedtuple('State', ['vel', 'boost', 'time', 'dist'])
 
@@ -81,7 +83,7 @@ class VelocityRange:
 
                 return State(cls_max_speed, state.boost, time, dist)
 
-        return jit(process)
+        return fast_jit(process)
 
 
 class Velocity0To1400(VelocityRange):
@@ -89,17 +91,17 @@ class Velocity0To1400(VelocityRange):
     use_boost = False
 
     @staticmethod
-    @jit
+    @fast_jit
     def distance_traveled(t: float, v0: float) -> float:
         return (b * (-a * t + math.expm1(a * t)) + a * v0 * math.expm1(a * t)) / (a * a)
 
     @staticmethod
-    @jit
+    @fast_jit
     def velocity_reached(t: float, v0: float) -> float:
         return (b * math.expm1(a * t)) / a + v0 * math.exp(a * t)
 
     @staticmethod
-    @jit
+    @fast_jit
     def time_reach_velocity(v: float, v0: float) -> float:
         return math.log((a * v + b) / (a * v0 + b)) / a
 
@@ -109,19 +111,19 @@ class Velocity0To1400Boost(VelocityRange):
     use_boost = True
 
     @staticmethod
-    @jit
+    @fast_jit
     def distance_traveled(t: float, v0: float) -> float:
         b = THROTTLE_ACCELERATION_0 + BOOST_ACCELERATION
         return (b * (-a * t + math.expm1(a * t)) + a * v0 * math.expm1(a * t)) / (a * a)
 
     @staticmethod
-    @jit
+    @fast_jit
     def velocity_reached(t: float, v0: float) -> float:
         b = THROTTLE_ACCELERATION_0 + BOOST_ACCELERATION
         return (b * math.expm1(a * t)) / a + v0 * math.exp(a * t)
 
     @staticmethod
-    @jit
+    @fast_jit
     def time_reach_velocity(v: float, v0: float) -> float:
         b = THROTTLE_ACCELERATION_0 + BOOST_ACCELERATION
         return math.log((a * v + b) / (a * v0 + b)) / a
@@ -133,17 +135,17 @@ class Velocity1400To2300(Velocity0To1400):
     use_boost = True
 
     @staticmethod
-    @jit
+    @fast_jit
     def distance_traveled(t: float, v0: float) -> float:
         return t * (BOOST_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    @jit
+    @fast_jit
     def velocity_reached(t: float, v0: float) -> float:
         return BOOST_ACCELERATION * t + v0
 
     @staticmethod
-    @jit
+    @fast_jit
     def time_reach_velocity(v: float, v0: float) -> float:
         return (v - v0) / BOOST_ACCELERATION
 
@@ -156,17 +158,17 @@ class VelocityNegative(VelocityRange):
     use_boost = False
 
     @staticmethod
-    @jit
+    @fast_jit
     def distance_traveled(t: float, v0: float) -> float:
         return t * (BREAK_ACCELERATION * t + 2 * v0) / 2
 
     @staticmethod
-    @jit
+    @fast_jit
     def velocity_reached(t: float, v0: float) -> float:
         return BREAK_ACCELERATION * t + v0
 
     @staticmethod
-    @jit
+    @fast_jit
     def time_reach_velocity(v: float, v0: float) -> float:
         return (v - v0) / BREAK_ACCELERATION
 
@@ -177,7 +179,7 @@ step3 = Velocity0To1400.wrap()
 step4 = Velocity1400To2300.wrap()
 
 
-@jit(float64(float64, float64, float64), nopython=True)
+@jit(float64(float64, float64, float64), nopython=True, fastmath=True)
 def distance_traveled(t: float, v0: float, boost_amount: float) -> float:
     """Returns the max distance driven forward using boost, this allows any starting velocity
     assuming we're not using boost when going backwards and using it otherwise."""
