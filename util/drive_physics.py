@@ -54,16 +54,23 @@ class VelocityRange:
                 if cls_max_speed <= state.vel or state.time == 0.:
                     return state
 
-                t = min(state.boost / BOOST_CONSUMPTION_RATE,
-                        cls_time_reach_velocity(cls_max_speed, state.vel))
+                t_boost = state.boost / BOOST_CONSUMPTION_RATE
+                t_vel = cls_time_reach_velocity(cls_max_speed, state.vel)
 
-                if state.time <= t:
+                if state.time <= t_boost and state.time <= t_vel:
                     dist = state.dist + cls_distance_traveled(state.time, state.vel)
                     return State(0., 0., 0., dist)
 
-                vel = cls_velocity_reached(t, state.vel)
+                if t_boost < t_vel:
+                    t = t_boost
+                    vel = cls_velocity_reached(t, state.vel)
+                    boost = 0.
+                else:
+                    t = t_vel
+                    vel = 0
+                    boost = state.boost - t * BOOST_CONSUMPTION_RATE
+
                 dist = state.dist + cls_distance_traveled(t, state.vel)
-                boost = state.boost - t * BOOST_CONSUMPTION_RATE
                 time = state.time - t
 
                 return State(vel, boost, time, dist)
