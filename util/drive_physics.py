@@ -42,44 +42,46 @@ class VelocityRange:
     def wrap(cls):
         """Advances the state to the soonest phase end."""
 
-        max_speed = cls.max_speed
-        distance_traveled = cls.distance_traveled
-        velocity_reached = cls.velocity_reached
-        time_reach_velocity = cls.time_reach_velocity
+        cls_max_speed = cls.max_speed
+        cls_distance_traveled = cls.distance_traveled
+        cls_velocity_reached = cls.velocity_reached
+        cls_time_reach_velocity = cls.time_reach_velocity
 
-        @jit
-        def process_boost(state: State) -> State:
-            if max_speed <= state.vel or state.time == 0.:
-                return state
+        if cls.use_boost:
+            def process(state: State) -> State:
+                if cls_max_speed <= state.vel or state.time == 0.:
+                    return state
 
-            t = min(state.boost / BOOST_CONSUMPTION_RATE, time_reach_velocity(max_speed, state.vel))
+                t = min(state.boost / BOOST_CONSUMPTION_RATE,
+                        cls_time_reach_velocity(cls_max_speed, state.vel))
 
-            if state.time <= t:
-                return State(0., 0., 0., state.dist + distance_traveled(state.time, state.vel))
+                if state.time <= t:
+                    dist = state.dist + cls_distance_traveled(state.time, state.vel)
+                    return State(0., 0., 0., dist)
 
-            vel = velocity_reached(t, state.vel)
-            dist = state.dist + distance_traveled(t, state.vel)
-            boost = state.boost - t * BOOST_CONSUMPTION_RATE
-            time = state.time - t
+                vel = cls_velocity_reached(t, state.vel)
+                dist = state.dist + cls_distance_traveled(t, state.vel)
+                boost = state.boost - t * BOOST_CONSUMPTION_RATE
+                time = state.time - t
 
-            return State(vel, boost, time, dist)
+                return State(vel, boost, time, dist)
+        else:
+            def process(state: State) -> State:
+                if cls_max_speed <= state.vel or state.time == 0.:
+                    return state
 
-        @jit
-        def process_no_boost(state: State) -> State:
-            if max_speed <= state.vel or state.time == 0.:
-                return state
+                t = cls_time_reach_velocity(cls_max_speed, state.vel)
 
-            t = time_reach_velocity(max_speed, state.vel)
+                if state.time <= t:
+                    dist = state.dist + cls_distance_traveled(state.time, state.vel)
+                    return State(0., 0., 0., dist)
 
-            if state.time <= t:
-                return State(0., 0., 0., state.dist + distance_traveled(state.time, state.vel))
+                dist = state.dist + cls_distance_traveled(t, state.vel)
+                time = state.time - t
 
-            dist = state.dist + distance_traveled(t, state.vel)
-            time = state.time - t
+                return State(cls_max_speed, state.boost, time, dist)
 
-            return State(max_speed, state.boost, time, dist)
-
-        return process_boost if cls.use_boost else process_no_boost
+        return jit(process)
 
 
 class Velocity0To1400(VelocityRange):
