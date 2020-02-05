@@ -6,7 +6,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics import throttle_accel, BOOST_ACCELERATION
+from util.drive_physics_experimental import throttle_accel, BOOST_ACCELERATION
 from util.render_utils import render_hitbox
 
 PI = math.pi

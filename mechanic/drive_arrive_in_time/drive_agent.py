@@ -15,13 +15,15 @@ class TestAgent(BaseTestAgent):
 
         if not hasattr(self, 'distance_traveled'):
             # importing compiled numba functions late works better.
-            from util.drive_physics_vectorized import distance_traveled_vectorized
+            from util.drive_physics import distance_traveled_vectorized
             self.distance_traveled_vectorized = distance_traveled_vectorized
 
         ball_prediction = self.game_data.ball_prediction
 
         target_loc = self.game_data.ball.location
         target_dt = 0
+
+        car_height = self.game_data.my_car.hitbox_corner[2] + self.game_data.my_car.hitbox_offset[2]
 
         # only accurate if we're already moving towards the target
         velocity = np.array([np.linalg.norm(self.game_data.my_car.velocity)])
@@ -37,7 +39,8 @@ class TestAgent(BaseTestAgent):
         time_slices = ball_prediction["game_seconds"] - self.game_data.time
 
         reachable = (self.distance_traveled_vectorized(time_slices, velocity, boost) >
-                     distance_slices) & (location_slices[:, 2] < 120)
+                     distance_slices) & (
+            location_slices[:, 2] < self.game_data.ball.radius + car_height)
 
         filtered_prediction = ball_prediction[reachable]
 

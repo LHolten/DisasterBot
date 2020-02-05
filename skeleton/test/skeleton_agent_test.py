@@ -41,7 +41,7 @@ def main():
 
     agent = SkeletonAgentTest("test_agent", 0, 0)
     game_tick_packet = GameTickPacket()
-    game_tick_packet.num_cars = 6
+    game_tick_packet.num_cars = 10
     game_tick_packet.num_boost = MAX_BOOSTS
     game_tick_packet.num_tiles = MAX_GOALS
 

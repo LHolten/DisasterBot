@@ -47,6 +47,4 @@ def rotator_to_matrix(rotator: Rotator):
 
 def box_shape_to_numpy(box_shape: BoxShape):
     """Converts BoxShape to numpy array"""
-    a = np.array([box_shape.length, box_shape.width, box_shape.height])
-    a.flags.writeable = False
-    return a
+    return np.array([box_shape.length, box_shape.width, box_shape.height])
