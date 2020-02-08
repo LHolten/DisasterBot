@@ -6,16 +6,20 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics_simulation import throttle_acceleration, BOOST_ACCELERATION
+from util.drive_physics_simulation import throttle_acceleration, BOOST_MIN_ACCELERATION, \
+    MAX_CAR_SPEED
 from util.render_utils import render_hitbox
 
 PI = math.pi
-DT = 1 / 120
 
 
 class DriveArriveInTime(BaseMechanic):
 
     def step(self, car, target_loc, time) -> SimpleControllerState:
+
+        delta_time = car.time - car.last_time
+        if delta_time == 0:
+            delta_time = 1 / 60
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
         car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
@@ -37,14 +41,14 @@ class DriveArriveInTime(BaseMechanic):
         self.controls.steer = clip(proportional_steer + derivative_steer)
 
         # arrive in time
-        desired_vel = clip(distance / max(time - DT, 1e-5), -2300, 2300)
+        desired_vel = clip(distance / max(time - delta_time, 1e-5), -2300, 2300)
 
         # throttle to desired velocity
-        self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel)
+        self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel, delta_time)
 
         # boost to desired velocity
         self.controls.boost = not self.controls.handbrake and boost_velocity(
-            car_forward_velocity, desired_vel, self.controls.throttle)
+            car_forward_velocity, desired_vel, self.controls.throttle, delta_time)
 
         # This makes sure we're not powersliding
         # if the car is spinning the opposite way we're steering towards
@@ -72,7 +76,7 @@ class DriveArriveInTime(BaseMechanic):
         self.agent.renderer.end_rendering()
 
         # updating status
-        if distance < 40 and abs(time) < 0.1:
+        if distance < 20 and abs(time) < 0.05:
             self.finished = True
         else:
             self.finished = False
@@ -80,9 +84,9 @@ class DriveArriveInTime(BaseMechanic):
         return self.controls
 
 
-def throttle_velocity(vel, desired_vel):
+def throttle_velocity(vel, desired_vel, dt):
     """PD throttle to velocity"""
-    desired_accel = (desired_vel - vel) / DT * sign(desired_vel)
+    desired_accel = (desired_vel - vel) / dt * sign(desired_vel)
     if desired_accel > 0:
         return clip(desired_accel / max(throttle_acceleration(vel, 1), 0.001)) * sign(desired_vel)
     elif -3600 < desired_accel <= 0:
@@ -91,10 +95,11 @@ def throttle_velocity(vel, desired_vel):
         return -1
 
 
-def boost_velocity(vel, desired_vel, throttle):
+def boost_velocity(vel, desired_vel, throttle, dt):
     """P velocity boost control"""
-    if desired_vel < vel or vel < 0:
+    if desired_vel < vel or vel < 0 or vel > MAX_CAR_SPEED - 1:
+        # don't boost if we want to go or we're going backwards
         return False
     else:
-        desired_accel = (desired_vel - vel) / DT
-        return desired_accel - throttle_acceleration(vel, throttle) > BOOST_ACCELERATION * 8
+        desired_accel = (desired_vel - vel) / dt
+        return desired_accel - throttle_acceleration(vel, throttle) > BOOST_MIN_ACCELERATION

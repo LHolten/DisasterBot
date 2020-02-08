@@ -86,7 +86,7 @@ class GameData:
 
         buf = buf_from_mem(ctypes.addressof(game_cars),
                            dtype_PlayerInfo.itemsize * num_cars, BUF_READ)
-        converted_game_cars = np.frombuffer(buf, dtype_PlayerInfo)
+        converted_game_cars = np.frombuffer(buf, dtype_PlayerInfo).copy()
 
         teammates_mask = converted_game_cars['team'] == self.my_car.team
         self.opponents = converted_game_cars[~teammates_mask]
@@ -98,7 +98,7 @@ class GameData:
 
         buf = buf_from_mem(ctypes.addressof(game_boosts),
                            dtype_BoostPadState.itemsize * num_boosts, BUF_READ)
-        converted_game_boosts = np.frombuffer(buf, dtype_BoostPadState)
+        converted_game_boosts = np.frombuffer(buf, dtype_BoostPadState).copy()
 
         # this fails if we don't call initialize_agent()
         assert set(self.boost_pads.dtype.names) == set(
@@ -130,12 +130,9 @@ class GameData:
 
         buf = buf_from_mem(ctypes.addressof(boost_pads),
                            dtype_BoostPad.itemsize * num_boosts, BUF_READ)
-        converted_boost_pads = np.frombuffer(buf, dtype_BoostPad)
+        converted_boost_pads = np.frombuffer(buf, dtype_BoostPad).copy()
 
         full_dtype = np.dtype(dict(**dtype_BoostPad.fields, **dtype_BoostPadState.fields))
-        # full_dtype = [('location', 'float', 3), ('is_full_boost', 'bool'),
-        #               ('is_active', 'bool'), ('timer', 'float')]
-
         self.boost_pads = np.zeros(num_boosts, full_dtype)
         self.boost_pads[list(dtype_BoostPad.names)] = converted_boost_pads
 
@@ -143,7 +140,7 @@ class GameData:
 
         buf = buf_from_mem(ctypes.addressof(goals),
                            dtype_GoalInfo.itemsize * num_goals, BUF_READ)
-        converted_goals = np.frombuffer(buf, dtype_GoalInfo)
+        converted_goals = np.frombuffer(buf, dtype_GoalInfo).copy()
 
         own_goals_mask = converted_goals['team_num'] == self.team
         self.opp_goals = converted_goals[~own_goals_mask]
@@ -161,7 +158,7 @@ class GameData:
 
         buf = buf_from_mem(ctypes.addressof(ball_prediction_struct.slices),
                            dtype_Slice.itemsize * ball_prediction_struct.num_slices, BUF_READ)
-        self.ball_prediction = np.frombuffer(buf, dtype_Slice)
+        self.ball_prediction = np.frombuffer(buf, dtype_Slice).copy()
 
         self.ball_prediction.flags.writeable = False
 
