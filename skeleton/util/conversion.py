@@ -2,6 +2,7 @@ import math
 import numpy as np
 
 from rlbot.utils.structures.game_data_struct import Vector3, Rotator, BoxShape
+from rlbot.agents.base_agent import SimpleControllerState
 
 
 def vector3_to_numpy(vector: Vector3):
@@ -48,3 +49,16 @@ def rotator_to_matrix(rotator: Rotator):
 def box_shape_to_numpy(box_shape: BoxShape):
     """Converts BoxShape to numpy array"""
     return np.array([box_shape.length, box_shape.width, box_shape.height])
+
+
+def copy_controls(obj_to: SimpleControllerState, obj_from: SimpleControllerState):
+    """Copies the attribute of one SimpleControlerStates to another"""
+    obj_to.steer = obj_from.steer
+    obj_to.throttle = obj_from.throttle
+    obj_to.pitch = obj_from.pitch
+    obj_to.yaw = obj_from.yaw
+    obj_to.roll = obj_from.roll
+    obj_to.jump = obj_from.jump
+    obj_to.boost = obj_from.boost
+    obj_to.handbrake = obj_from.handbrake
+    obj_to.use_item = obj_from.use_item

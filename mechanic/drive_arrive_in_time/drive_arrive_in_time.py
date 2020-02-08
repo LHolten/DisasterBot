@@ -6,7 +6,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics_experimental import throttle_accel, BOOST_ACCELERATION
+from util.drive_physics_simulation import throttle_acceleration, BOOST_ACCELERATION
 from util.render_utils import render_hitbox
 
 PI = math.pi
@@ -84,7 +84,7 @@ def throttle_velocity(vel, desired_vel):
     """PD throttle to velocity"""
     desired_accel = (desired_vel - vel) / DT * sign(desired_vel)
     if desired_accel > 0:
-        return clip(desired_accel / max(throttle_accel(vel, 1), 0.001)) * sign(desired_vel)
+        return clip(desired_accel / max(throttle_acceleration(vel, 1), 0.001)) * sign(desired_vel)
     elif -3600 < desired_accel <= 0:
         return 0
     else:
@@ -97,4 +97,4 @@ def boost_velocity(vel, desired_vel, throttle):
         return False
     else:
         desired_accel = (desired_vel - vel) / DT
-        return desired_accel - throttle_accel(vel, throttle) > BOOST_ACCELERATION * 8
+        return desired_accel - throttle_acceleration(vel, throttle) > BOOST_ACCELERATION * 8

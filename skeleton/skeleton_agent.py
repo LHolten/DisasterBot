@@ -1,4 +1,3 @@
-import cProfile
 import time
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
 from rlbot.utils.structures.game_data_struct import GameTickPacket
@@ -16,7 +15,6 @@ class SkeletonAgent(BaseAgent):
 
         self.game_data = GameData(self.name, self.team, self.index)
         self.controls = SimpleControllerState()
-        self.pr = cProfile.Profile()
 
     def initialize_agent(self):
         """Hopefully this gets called before get_output and after the game has fully loaded.
@@ -27,7 +25,6 @@ class SkeletonAgent(BaseAgent):
         """Overriding this function is not advised, use get_controls() instead."""
 
         chrono_start = time.time()
-        self.pr.enable()
 
         self.pre_process(game_tick_packet)
 
@@ -36,12 +33,10 @@ class SkeletonAgent(BaseAgent):
         self.feedback()
 
         delta_time = time.time() - chrono_start
-        self.pr.disable()
-
-        self.pr.dump_stats('stats.pstat')
 
         if delta_time > 1 / 120:
-            self.logger.warn(f"Took too long to execute: {delta_time * 120 * 100:.3f}%")
+            self.logger.warn(f"Slow to execute on frame {self.game_data.counter}: "
+                             f"{delta_time * 120 * 100:.3f}%")
 
         return self.controls
 

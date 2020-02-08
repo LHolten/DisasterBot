@@ -3,7 +3,7 @@ from pathlib import Path
 from timeit import timeit
 
 from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPacket, MAX_BOOSTS, \
-    MAX_GOALS
+    MAX_GOALS, MAX_PLAYERS
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
 
 current_path = Path(__file__).absolute().parent
@@ -41,7 +41,7 @@ def main():
 
     agent = SkeletonAgentTest("test_agent", 0, 0)
     game_tick_packet = GameTickPacket()
-    game_tick_packet.num_cars = 10
+    game_tick_packet.num_cars = MAX_PLAYERS
     game_tick_packet.num_boost = MAX_BOOSTS
     game_tick_packet.num_tiles = MAX_GOALS
 

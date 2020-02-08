@@ -1,7 +1,7 @@
 import math
 from collections import namedtuple
 
-from numba import vectorize, float64, jit
+from numba import vectorize, f8, jit
 
 THROTTLE_ACCELERATION_0 = 1600.
 THROTTLE_ACCELERATION_1400 = 160.
@@ -18,7 +18,7 @@ BOOST_CONSUMPTION_RATE = 33.3  # per second
 a = - (THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 b = THROTTLE_ACCELERATION_0
 
-fast_jit = jit(nopython=True, fastmath=True)
+fast_jit = jit(f8(f8, f8), nopython=True, fastmath=True)
 
 
 State = namedtuple('State', ['vel', 'boost', 'time', 'dist'])
@@ -54,24 +54,24 @@ class VelocityRange:
                 if cls_max_speed <= state.vel or state.time == 0.:
                     return state
 
-                t_boost = state.boost / BOOST_CONSUMPTION_RATE
-                t_vel = cls_time_reach_velocity(cls_max_speed, state.vel)
+                time_0_boost = state.boost / BOOST_CONSUMPTION_RATE
+                time_vel = cls_time_reach_velocity(cls_max_speed, state.vel)
 
-                if state.time <= t_boost and state.time <= t_vel:
+                if state.time <= time_0_boost and state.time <= time_vel:
                     dist = state.dist + cls_distance_traveled(state.time, state.vel)
                     return State(0., 0., 0., dist)
 
-                if t_boost < t_vel:
-                    t = t_boost
-                    vel = cls_velocity_reached(t_boost, state.vel)
+                if time_0_boost < time_vel:
+                    delta_time = time_0_boost
+                    vel = cls_velocity_reached(time_0_boost, state.vel)
                     boost = 0.
                 else:
-                    t = t_vel
+                    delta_time = time_vel
                     vel = cls_max_speed
-                    boost = state.boost - t * BOOST_CONSUMPTION_RATE
+                    boost = state.boost - delta_time * BOOST_CONSUMPTION_RATE
 
-                dist = state.dist + cls_distance_traveled(t, state.vel)
-                time = state.time - t
+                dist = state.dist + cls_distance_traveled(delta_time, state.vel)
+                time = state.time - delta_time
 
                 return State(vel, boost, time, dist)
         else:
@@ -79,18 +79,18 @@ class VelocityRange:
                 if cls_max_speed <= state.vel or state.time == 0.:
                     return state
 
-                t = cls_time_reach_velocity(cls_max_speed, state.vel)
+                time_vel = cls_time_reach_velocity(cls_max_speed, state.vel)
 
-                if state.time <= t:
+                if state.time <= time_vel:
                     dist = state.dist + cls_distance_traveled(state.time, state.vel)
                     return State(0., 0., 0., dist)
 
-                dist = state.dist + cls_distance_traveled(t, state.vel)
-                time = state.time - t
+                dist = state.dist + cls_distance_traveled(time_vel, state.vel)
+                time = state.time - time_vel
 
                 return State(cls_max_speed, state.boost, time, dist)
 
-        return fast_jit(distance_state_step)
+        return jit(distance_state_step, nopython=True, fastmath=True)
 
 
 class Velocity0To1400(VelocityRange):
@@ -136,8 +136,8 @@ class Velocity0To1400Boost(VelocityRange):
         return math.log((a * v + b) / (a * v0 + b)) / a
 
 
-# for when the only acceleration that applies is from boost.
 class Velocity1400To2300(Velocity0To1400):
+    """for when the only acceleration that applies is from boost."""
     max_speed = MAX_CAR_SPEED
     use_boost = True
 
@@ -157,10 +157,10 @@ class Velocity1400To2300(Velocity0To1400):
         return (v - v0) / BOOST_ACCELERATION
 
 
-# for when the velocity is opposite the throttle direction,
-# only the breaking acceleration applies, boosting has no effect.
-# assuming throttle is positive, flip velocity signs if otherwise.
 class VelocityNegative(VelocityRange):
+    """for when the velocity is opposite the throttle direction,
+    only the breaking acceleration applies, boosting has no effect.
+    assuming throttle is positive, flip velocity signs if otherwise."""
     max_speed = 0.
     use_boost = False
 
@@ -180,28 +180,27 @@ class VelocityNegative(VelocityRange):
         return (v - v0) / BREAK_ACCELERATION
 
 
-step1 = VelocityNegative.wrap_distance_state_step()
-step2 = Velocity0To1400Boost.wrap_distance_state_step()
-step3 = Velocity0To1400.wrap_distance_state_step()
-step4 = Velocity1400To2300.wrap_distance_state_step()
+distance_step_velocity_negative = VelocityNegative.wrap_distance_state_step()
+distance_step_velocity_0_1400_boost = Velocity0To1400Boost.wrap_distance_state_step()
+distance_step_velocity_0_1400 = Velocity0To1400.wrap_distance_state_step()
+distance_step_velocity_1400_2300 = Velocity1400To2300.wrap_distance_state_step()
 
 
-@jit(float64(float64, float64, float64), nopython=True, fastmath=True)
-def distance_traveled(t: float, v0: float, boost_amount: float) -> float:
+@jit(f8(f8, f8, f8), nopython=True, fastmath=True)
+def distance_traveled(time: float, initial_velocity: float, boost_amount: float) -> float:
     """Returns the max distance driven forward using boost, this allows any starting velocity
     assuming we're not using boost when going backwards and using it otherwise."""
-    state = State(v0, boost_amount, t, 0.)
+    state = State(initial_velocity, boost_amount, time, 0.)
 
-    state = step1(state)
-    state = step2(state)
-    state = step3(state)
-    state = step4(state)
+    state = distance_step_velocity_negative(state)
+    state = distance_step_velocity_0_1400_boost(state)
+    state = distance_step_velocity_0_1400(state)
+    state = distance_step_velocity_1400_2300(state)
 
     return state.dist + state.time * state.vel
 
 
-distance_traveled_vectorized = vectorize(
-    [float64(float64, float64, float64)], nopython=True)(distance_traveled)
+distance_traveled_vectorized = vectorize([f8(f8, f8, f8)], nopython=True)(distance_traveled)
 
 
 def main():
@@ -209,7 +208,7 @@ def main():
     from timeit import timeit
     import numpy as np
 
-    time = np.linspace(0.1, 6, 360)
+    time = np.linspace(0, 6, 360)
     initial_velocity = np.linspace(-2300, 2300, 360)
     boost_amount = np.linspace(0, 100, 360)
 
@@ -234,11 +233,11 @@ if __name__ == '__main__':
 
     for time in range(0, 100):
         time = time / 10
-        print(time)
         for initial_velocity in range(0, 2300, 100):
             for boost_amount in range(0, 100, 10):
                 res1 = distance_traveled(time, initial_velocity, boost_amount)
                 res2 = distance_traveled2(time, initial_velocity, boost_amount)
-                if abs(res1 - res2) > 0.0001:
+                if abs(res1 - res2) > 1e-4:
+                    print("Failed the accuracy test")
                     print(time, initial_velocity, boost_amount, ' : ', res1, res2)
                     quit()
