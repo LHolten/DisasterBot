@@ -8,7 +8,7 @@ OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 @vectorize([c16(c16, c16, c16)], nopython=True, cache=True)
 def sc_fma(x, y, z):
-    return (x * y + z)
+    return x * y + z
 
 
 @vectorize([c16(f8, f8, f8, f8, c16)], nopython=True, cache=True)
@@ -79,8 +79,7 @@ def lambertw0_scalar(z):
     # Get an initial guess for Halley's method
     if abs(z + EXPN1) < 0.3:
         w = lambertw_branchpt(z)
-    elif (-1.0 < z.real < 1.5 and abs(z.imag) < 1.0 and
-          -2.5 * abs(z.imag) - 0.2 < z.real):
+    elif -1.0 < z.real < 1.5 and abs(z.imag) < 1.0 and -2.5 * abs(z.imag) - 0.2 < z.real:
         # Empirically determined decision boundary where the Pade
         # approximation is more accurate.
         w = lambertw_pade0(z)
@@ -139,14 +138,5 @@ def main():
     print(f"That's {percentage} % of our time budget.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-from scipy.special import lambertw as lambertw2
-
-for x in range(-100, 100, 1):
-    x /= 10
-    res1 = lambertw(x)
-    res2 = lambertw2(x).real
-    if abs(res1 - res2) > 1e-6:
-        print("Failed the accuracy test with input ", x, "results were ", res1, " and ", res2)

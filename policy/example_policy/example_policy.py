@@ -8,7 +8,6 @@ from action.kickoff import Kickoff
 
 
 class ExamplePolicy(BasePolicy):
-
     def __init__(self, agent):
         super(ExamplePolicy, self).__init__(agent)
         self.collect_boost_action = CollectBoost(agent)

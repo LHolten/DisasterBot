@@ -2,8 +2,13 @@ import sys
 from pathlib import Path
 from timeit import timeit
 
-from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPacket, MAX_BOOSTS, \
-    MAX_GOALS, MAX_PLAYERS
+from rlbot.utils.structures.game_data_struct import (
+    FieldInfoPacket,
+    GameTickPacket,
+    MAX_BOOSTS,
+    MAX_GOALS,
+    MAX_PLAYERS,
+)
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
 
 current_path = Path(__file__).absolute().parent

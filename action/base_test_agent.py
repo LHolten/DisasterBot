@@ -4,7 +4,6 @@ from .base_action import BaseAction
 
 
 class BaseTestAgent(SkeletonAgent):
-
     def __init__(self, name, team, index):
         super(BaseTestAgent, self).__init__(name, team, index)
         self.action = self.create_action()
@@ -27,5 +26,5 @@ class BaseTestAgent(SkeletonAgent):
             self.action.update_status(self.game_data)
 
         if self.initialized and self.action.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait('done')
+            self.matchcomms.outgoing_broadcast.put_nowait("done")
             self.initialized = False

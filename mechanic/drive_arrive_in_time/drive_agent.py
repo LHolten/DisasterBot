@@ -7,15 +7,15 @@ from util.collision_utils import box_ball_collision_distance, box_ball_location_
 
 
 class TestAgent(BaseTestAgent):
-
     def create_mechanic(self):
         return DriveArriveInTime(self)
 
     def get_mechanic_controls(self):
 
-        if not hasattr(self, 'distance_traveled_vectorized'):
+        if not hasattr(self, "distance_traveled_vectorized"):
             # importing compiled numba functions late works better.
             from util.drive_physics import distance_traveled_vectorized
+
             self.distance_traveled_vectorized = distance_traveled_vectorized
 
         ball_prediction = self.game_data.ball_prediction
@@ -34,29 +34,22 @@ class TestAgent(BaseTestAgent):
 
         location_slices = ball_prediction["physics"]["location"]
 
-        distance_slices = box_ball_collision_distance(location_slices,
-                                                      car.location,
-                                                      car.rotation_matrix,
-                                                      car.hitbox_corner,
-                                                      car.hitbox_offset,
-                                                      ball.radius)
+        distance_slices = box_ball_collision_distance(
+            location_slices, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
+        )
         time_slices = ball_prediction["game_seconds"] - self.game_data.time
 
         not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
 
-        reachable = (self.distance_traveled_vectorized(time_slices, velocity, boost) >
-                     distance_slices) & (not_too_high)
+        reachable = (self.distance_traveled_vectorized(time_slices, velocity, boost) > distance_slices) & (not_too_high)
 
         filtered_prediction = ball_prediction[reachable]
 
         if len(filtered_prediction) > 0:
             target_loc = filtered_prediction[0]["physics"]["location"]
             target_dt = filtered_prediction[0]["game_seconds"] - self.game_data.time
-            target_loc = box_ball_location_on_collision(target_loc,
-                                                        car.location,
-                                                        car.rotation_matrix,
-                                                        car.hitbox_corner,
-                                                        car.hitbox_offset,
-                                                        ball.radius)
+            target_loc = box_ball_location_on_collision(
+                target_loc, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
+            )
 
         return self.mechanic.step(car, target_loc, target_dt)

@@ -6,7 +6,6 @@ from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 
 class CollectBoost(BaseAction):
-
     def __init__(self, agent):
         super(CollectBoost, self).__init__(agent)
         self.mechanic = None
@@ -37,4 +36,4 @@ class CollectBoost(BaseAction):
             self.finished = True
 
     def is_valid(self, game_data):
-        return len(game_data.boost_pads['is_active']) > 0
+        return len(game_data.boost_pads["is_active"]) > 0

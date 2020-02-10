@@ -20,14 +20,16 @@ class RotationExercise(TrainingExercise):
         t = rng.choice([-1, 1])
         f = rng.choice([-1, 1])
 
-        car_physics = Physics(velocity=Vector3(0, 0, 0),
-                              rotation=Rotator(0, (45 * f + t * 90) / 180 * math.pi, 0),
-                              angular_velocity=Vector3(0, 0, 0),
-                              location=Vector3(f * t * 2048, t * -2560, 17.0))
+        car_physics = Physics(
+            velocity=Vector3(0, 0, 0),
+            rotation=Rotator(0, (45 * f + t * 90) / 180 * math.pi, 0),
+            angular_velocity=Vector3(0, 0, 0),
+            location=Vector3(f * t * 2048, t * -2560, 17.0),
+        )
 
-        ball_physics = Physics(location=Vector3(0, 0, 92.74),
-                               velocity=Vector3(0, 0, 0),
-                               angular_velocity=Vector3(0, 0, 0))
+        ball_physics = Physics(
+            location=Vector3(0, 0, 92.74), velocity=Vector3(0, 0, 0), angular_velocity=Vector3(0, 0, 0),
+        )
 
         car_state = CarState(boost_amount=34, physics=car_physics)
 
@@ -44,11 +46,10 @@ from util.matchcomms_grader import MatchcommsGrader
 
 
 def make_default_playlist():
-    match_config = make_match_config_with_bots(blue_bots=[current_path / 'kickoff_agent.cfg'])
-    exercise = RotationExercise(name='Kickoff', grader=MatchcommsGrader(),
-                                match_config=match_config)
+    match_config = make_match_config_with_bots(blue_bots=[current_path / "kickoff_agent.cfg"])
+    exercise = RotationExercise(name="Kickoff", grader=MatchcommsGrader(), match_config=match_config)
     return [exercise]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exercise_runner.run_module(Path(__file__).absolute())

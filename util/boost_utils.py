@@ -6,9 +6,9 @@ from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPac
 def closest_available_boost(my_loc: np.ndarray, boost_pads: np.ndarray) -> np.ndarray:
     """Returns the closest available boost pad to my_loc"""
 
-    distances = np.linalg.norm(boost_pads['location'] - my_loc[None, :], axis=1)
-    recharge_time = np.where(boost_pads['is_full_boost'], 10, 4)
-    available = boost_pads['is_active'] | (distances / 2300 > recharge_time - boost_pads['timer'])
+    distances = np.linalg.norm(boost_pads["location"] - my_loc[None, :], axis=1)
+    recharge_time = np.where(boost_pads["is_full_boost"], 10, 4)
+    available = boost_pads["is_active"] | (distances / 2300 > recharge_time - boost_pads["timer"])
 
     available_distances = distances[available]
     if len(available_distances) > 0:
@@ -36,23 +36,26 @@ def main():
     buf_from_mem.restype = ctypes.py_object
     buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
 
-    dtype = np.dtype([('location', '<f4', 3), ('is_full_boost', '?')], True)
+    dtype = np.dtype([("location", "<f4", 3), ("is_full_boost", "?")], True)
     buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
     converted_boost_pads = np.frombuffer(buffer, dtype)
 
-    full_dtype = [('location', '<f4', 3), ('is_full_boost', '?'),
-                  ('is_active', '?'), ('timer', '<f4')]
+    full_dtype = [
+        ("location", "<f4", 3),
+        ("is_full_boost", "?"),
+        ("is_active", "?"),
+        ("timer", "<f4"),
+    ]
 
     boost_pads = np.zeros(num_boosts, full_dtype)
-    boost_pads[['location', 'is_full_boost']] = converted_boost_pads
+    boost_pads[["location", "is_full_boost"]] = converted_boost_pads
 
     game_tick_packet = GameTickPacket()
 
-    dtype = np.dtype([('is_active', '?'), ('timer', '<f4')], True)
-    converted_game_boosts = np.array(game_tick_packet.game_boosts,
-                                     copy=False).view(dtype)[:num_boosts]
-    boost_pads[['is_active', 'timer']] = converted_game_boosts
-    boost_pads['is_active'] = True
+    dtype = np.dtype([("is_active", "?"), ("timer", "<f4")], True)
+    converted_game_boosts = np.array(game_tick_packet.game_boosts, copy=False).view(dtype)[:num_boosts]
+    boost_pads[["is_active", "timer"]] = converted_game_boosts
+    boost_pads["is_active"] = True
 
     def test_function():
         return closest_available_boost(my_loc, boost_pads)

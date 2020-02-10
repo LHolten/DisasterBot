@@ -3,7 +3,6 @@ from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 
 class TestAgent(BaseTestAgent):
-
     def create_mechanic(self):
         return DriveTurnFaceTarget(self)
 

@@ -40,8 +40,7 @@ def time_reach_velocity_0_1400(v: float, v0: float):
 
 @vectorize([f8(f8, f8)])
 def time_travel_distance_0_1400(d: float, v: float):
-    return (-d * a * a - b * lambertw(
-        -((b + a * v) * math.exp(-(a * (v + a * d)) / b - 1)) / b) - a * v - b) / (a * b)
+    return (-d * a * a - b * lambertw(-((b + a * v) * math.exp(-(a * (v + a * d)) / b - 1)) / b) - a * v - b) / (a * b)
 
 
 # driving within the 0 to 1400 velocity range with boost
@@ -62,8 +61,9 @@ def time_reach_velocity_0_1400_Boost(v: float, v0: float):
 
 @vectorize([f8(f8, f8)])
 def time_travel_distance_0_1400_Boost(d: float, v: float):
-    return (-d * a * a - b2 * lambertw(
-        -((b2 + a * v) * math.exp(-(a * (v + a * d)) / b - 1)) / b2) - a * v - b2) / (a * b2)
+    return (-d * a * a - b2 * lambertw(-((b2 + a * v) * math.exp(-(a * (v + a * d)) / b - 1)) / b2) - a * v - b2) / (
+        a * b2
+    )
 
 
 # for when the only acceleration that applies is from boost.
@@ -317,5 +317,5 @@ def main():
     print(f"That's {percentage} % of our time budget.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

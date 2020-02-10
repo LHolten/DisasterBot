@@ -2,7 +2,6 @@ from action.base_action import BaseAction
 
 
 class BasePolicy:
-
     def __init__(self, agent):
         self.agent = agent
         self.action: BaseAction = self.get_default_action()

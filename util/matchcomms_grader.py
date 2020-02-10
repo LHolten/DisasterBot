@@ -14,7 +14,7 @@ class MatchcommsGrader(Grader):
         assert self.matchcomms
 
         if not self.initialized:
-            self.matchcomms.outgoing_broadcast.put_nowait('start')
+            self.matchcomms.outgoing_broadcast.put_nowait("start")
 
         if not self.matchcomms.incoming_broadcast.empty():
             print(self.matchcomms.incoming_broadcast.get_nowait())

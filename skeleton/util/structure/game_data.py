@@ -4,14 +4,36 @@ from typing import List
 import numpy as np
 from rlbot.agents.base_agent import SimpleControllerState
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction
-from rlbot.utils.structures.game_data_struct import GameTickPacket, PlayerInfo, BallInfo, \
-    GameInfo, Physics, BoostPadState, FieldInfoPacket, BoostPad, GoalInfo, \
-    DropShotInfo, CollisionShape, MAX_BOOSTS, Touch
+from rlbot.utils.structures.game_data_struct import (
+    GameTickPacket,
+    PlayerInfo,
+    BallInfo,
+    GameInfo,
+    Physics,
+    BoostPadState,
+    FieldInfoPacket,
+    BoostPad,
+    GoalInfo,
+    DropShotInfo,
+    CollisionShape,
+    MAX_BOOSTS,
+    Touch,
+)
 
-from skeleton.util.structure.dtypes import dtype_PlayerInfo, dtype_BoostPadState, \
-    dtype_BoostPad, dtype_GoalInfo, dtype_Slice
-from skeleton.util.conversion import vector3_to_numpy, rotator_to_numpy, rotator_to_matrix, \
-    box_shape_to_numpy, copy_controls
+from skeleton.util.structure.dtypes import (
+    dtype_PlayerInfo,
+    dtype_BoostPadState,
+    dtype_BoostPad,
+    dtype_GoalInfo,
+    dtype_Slice,
+)
+from skeleton.util.conversion import (
+    vector3_to_numpy,
+    rotator_to_numpy,
+    rotator_to_matrix,
+    box_shape_to_numpy,
+    copy_controls,
+)
 
 
 BUF_READ = 0x100
@@ -24,7 +46,7 @@ class GameData:
 
     """Internal structure representing data provided by the rlbot framework."""
 
-    def __init__(self, name: str = 'skeleton', team: int = 0, index: int = 0):
+    def __init__(self, name: str = "skeleton", team: int = 0, index: int = 0):
 
         self.name = name
         self.index = index
@@ -72,11 +94,9 @@ class GameData:
         and converts it's contents into our internal structure."""
 
         self.game_tick_packet = game_tick_packet
-        self.read_game_cars(game_tick_packet.game_cars,
-                            game_tick_packet.num_cars)
+        self.read_game_cars(game_tick_packet.game_cars, game_tick_packet.num_cars)
         self.ball.read_game_ball(game_tick_packet.game_ball)
-        self.read_game_boosts(game_tick_packet.game_boosts,
-                              game_tick_packet.num_boost)
+        self.read_game_boosts(game_tick_packet.game_boosts, game_tick_packet.num_boost)
         self.read_game_info(game_tick_packet.game_info)
         self.update_extra_game_data()
 
@@ -84,11 +104,10 @@ class GameData:
 
         self.my_car.read_game_car(game_cars[self.index])
 
-        buf = buf_from_mem(ctypes.addressof(game_cars),
-                           dtype_PlayerInfo.itemsize * num_cars, BUF_READ)
+        buf = buf_from_mem(ctypes.addressof(game_cars), dtype_PlayerInfo.itemsize * num_cars, BUF_READ)
         converted_game_cars = np.frombuffer(buf, dtype_PlayerInfo).copy()
 
-        teammates_mask = converted_game_cars['team'] == self.my_car.team
+        teammates_mask = converted_game_cars["team"] == self.my_car.team
         self.opponents = converted_game_cars[~teammates_mask]
         self.teammates = converted_game_cars[teammates_mask]
 
@@ -96,13 +115,11 @@ class GameData:
         """Reads a list of BoostPadState ctype objects from the game tick packet,
         and updates our structured numpy array based on it's contents."""
 
-        buf = buf_from_mem(ctypes.addressof(game_boosts),
-                           dtype_BoostPadState.itemsize * num_boosts, BUF_READ)
+        buf = buf_from_mem(ctypes.addressof(game_boosts), dtype_BoostPadState.itemsize * num_boosts, BUF_READ)
         converted_game_boosts = np.frombuffer(buf, dtype_BoostPadState).copy()
 
         # this fails if we don't call initialize_agent()
-        assert set(self.boost_pads.dtype.names) == set(
-            dtype_BoostPad.names) | set(dtype_BoostPadState.names)
+        assert set(self.boost_pads.dtype.names) == set(dtype_BoostPad.names) | set(dtype_BoostPadState.names)
 
         self.boost_pads[list(dtype_BoostPadState.names)] = converted_game_boosts
 
@@ -128,8 +145,7 @@ class GameData:
         and converts it's contents into a structured numpy array.
         Also creates additional fields to be filled with the info from the game tick packet."""
 
-        buf = buf_from_mem(ctypes.addressof(boost_pads),
-                           dtype_BoostPad.itemsize * num_boosts, BUF_READ)
+        buf = buf_from_mem(ctypes.addressof(boost_pads), dtype_BoostPad.itemsize * num_boosts, BUF_READ)
         converted_boost_pads = np.frombuffer(buf, dtype_BoostPad).copy()
 
         full_dtype = np.dtype(dict(**dtype_BoostPad.fields, **dtype_BoostPadState.fields))
@@ -138,26 +154,28 @@ class GameData:
 
     def read_goals(self, goals: List[GoalInfo], num_goals: int):
 
-        buf = buf_from_mem(ctypes.addressof(goals),
-                           dtype_GoalInfo.itemsize * num_goals, BUF_READ)
+        buf = buf_from_mem(ctypes.addressof(goals), dtype_GoalInfo.itemsize * num_goals, BUF_READ)
         converted_goals = np.frombuffer(buf, dtype_GoalInfo).copy()
 
-        own_goals_mask = converted_goals['team_num'] == self.team
+        own_goals_mask = converted_goals["team_num"] == self.team
         self.opp_goals = converted_goals[~own_goals_mask]
         self.own_goals = converted_goals[own_goals_mask]
 
         if len(self.opp_goals) > 0:
-            self.opp_goal = Goal(self.opp_goals[0]['location'], self.opp_goals[0]['direction'])
+            self.opp_goal = Goal(self.opp_goals[0]["location"], self.opp_goals[0]["direction"])
 
         if len(self.own_goals) > 0:
-            self.own_goal = Goal(self.own_goals[0]['location'], self.own_goals[0]['direction'])
+            self.own_goal = Goal(self.own_goals[0]["location"], self.own_goals[0]["direction"])
 
     def read_ball_prediction_struct(self, ball_prediction_struct: BallPrediction):
         """Reads an instance of BallPrediction provided by the rlbot framework,
         and parses it's content into a structured numpy array."""
 
-        buf = buf_from_mem(ctypes.addressof(ball_prediction_struct.slices),
-                           dtype_Slice.itemsize * ball_prediction_struct.num_slices, BUF_READ)
+        buf = buf_from_mem(
+            ctypes.addressof(ball_prediction_struct.slices),
+            dtype_Slice.itemsize * ball_prediction_struct.num_slices,
+            BUF_READ,
+        )
         self.ball_prediction = np.frombuffer(buf, dtype_Slice).copy()
 
         self.ball_prediction.flags.writeable = False
@@ -176,7 +194,6 @@ class GameData:
 
 
 class PhysicsObject:
-
     def __init__(self):
 
         self.location = np.zeros(3)
@@ -195,7 +212,6 @@ class PhysicsObject:
 
 
 class Player(PhysicsObject):
-
     def __init__(self):
 
         # physics
@@ -310,14 +326,13 @@ class Player(PhysicsObject):
 
 
 class Ball(PhysicsObject):
-
     def __init__(self):
 
         # physics
         super(Ball, self).__init__()
 
         # latest touch
-        self.touch_player_name = 'skeleton'
+        self.touch_player_name = "skeleton"
         self.touch_time = 0.0
         self.touch_location = np.zeros(3)
         self.touch_direction = np.zeros(3)
@@ -355,7 +370,6 @@ class Ball(PhysicsObject):
 
 
 class Goal:
-
     def __init__(self, location=np.zeros(3), direction=np.zeros(3)):
 
         self.location = location

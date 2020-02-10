@@ -47,14 +47,14 @@ def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: f
     boost = initial_boost
     acceleration = 0
 
-    while (distance < max_distance):
+    while distance < max_distance:
         to_boost = sign(velocity) and boost > 0
         acceleration = throttle_acceleration(velocity, 1) + to_boost * BOOST_ACCELERATION
         velocity = min(velocity + acceleration * DT, MAX_CAR_SPEED)
         distance = distance + velocity * DT + 0.5 * acceleration * DT * DT
         boost -= to_boost * BOOST_CONSUMPTION_RATE * DT
         time += DT
-        if (time > 6):
+        if time > 6:
             break
 
     return time
@@ -80,8 +80,7 @@ def distance_traveled_simulation(time_window: float, initial_velocity: float, bo
 
 
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
-def time_reach_velocity_simulation(desired_velocity: float, initial_velocity: float,
-                                   boost_amount: float):
+def time_reach_velocity_simulation(desired_velocity: float, initial_velocity: float, boost_amount: float):
 
     DT = 1 / 120
     time = 0
@@ -110,6 +109,7 @@ def time_reach_velocity_simulation(desired_velocity: float, initial_velocity: fl
 def main():
 
     from timeit import timeit
+
     # import numpy as np
 
     # time = np.linspace(0, 6, 360)
@@ -134,5 +134,5 @@ def main():
     print(f"That's {percentage} % of our time budget.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -8,7 +8,6 @@ PI = math.pi
 
 
 class DriveTurnFaceTarget(BaseMechanic):
-
     def step(self, car, target_loc) -> SimpleControllerState:
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
@@ -40,10 +39,12 @@ class DriveTurnFaceTarget(BaseMechanic):
             self.controls.handbrake = False
 
         # rendering
-        strings = [f"yaw_angle_to_target : {yaw_angle_to_target:.2}",
-                   f"car_yaw_ang_vel : {car_yaw_ang_vel:.2}",
-                   f"steer : {self.controls.steer:.2f}",
-                   f"handbrake : {self.controls.handbrake}"]
+        strings = [
+            f"yaw_angle_to_target : {yaw_angle_to_target:.2}",
+            f"car_yaw_ang_vel : {car_yaw_ang_vel:.2}",
+            f"steer : {self.controls.steer:.2f}",
+            f"handbrake : {self.controls.handbrake}",
+        ]
         color = self.agent.renderer.white()
 
         self.agent.renderer.begin_rendering()

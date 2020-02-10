@@ -6,7 +6,6 @@ from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 
 class Kickoff(BaseAction):
-
     def __init__(self, agent):
         super(Kickoff, self).__init__(agent)
         self.mechanic = None

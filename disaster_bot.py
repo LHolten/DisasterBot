@@ -3,7 +3,6 @@ from policy.example_policy.example_policy import ExamplePolicy
 
 
 class DisasterBot(SkeletonAgent):
-
     def __init__(self, name, team, index):
         super(DisasterBot, self).__init__(name, team, index)
         self.policy = ExamplePolicy(self)
