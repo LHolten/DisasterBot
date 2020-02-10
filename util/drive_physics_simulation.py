@@ -93,7 +93,6 @@ def velocity_reached_simulation(time_window: float, initial_velocity: float, boo
     return velocity
 
 
-
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
 def boost_reached_simulation(time_window: float, initial_velocity: float, boost_amount: float):
 
