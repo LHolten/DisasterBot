@@ -40,12 +40,11 @@ def throttle_acceleration(vel: float, throttle: float = 1):
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
 def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: float):
 
-    DT = 1 / 120
+    DT = 1 / 60
     time = 0
     distance = 0
     velocity = v_0
     boost = initial_boost
-    acceleration = 0
 
     while distance < max_distance:
         to_boost = sign(velocity) and boost > 0
@@ -63,11 +62,10 @@ def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: f
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
 def distance_traveled_simulation(time_window: float, initial_velocity: float, boost_amount: float):
 
-    DT = 1 / 120
+    DT = 1 / 60
     distance = 0
     velocity = initial_velocity
     boost = boost_amount
-    acceleration = 0
 
     for i in range(round(time_window / DT)):
         to_boost = velocity >= 0 and boost > 0
@@ -80,9 +78,42 @@ def distance_traveled_simulation(time_window: float, initial_velocity: float, bo
 
 
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
+def velocity_reached_simulation(time_window: float, initial_velocity: float, boost_amount: float):
+
+    DT = 1 / 60
+    velocity = initial_velocity
+    boost = boost_amount
+
+    for i in range(round(time_window / DT)):
+        to_boost = velocity >= 0 and boost > 0
+        acceleration = throttle_acceleration(velocity, 1) + to_boost * BOOST_ACCELERATION
+        velocity = min(velocity + acceleration * DT, MAX_CAR_SPEED)
+        boost -= to_boost * BOOST_CONSUMPTION_RATE * DT
+
+    return velocity
+
+
+
+@vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
+def boost_reached_simulation(time_window: float, initial_velocity: float, boost_amount: float):
+
+    DT = 1 / 60
+    velocity = initial_velocity
+    boost = boost_amount
+
+    for i in range(round(time_window / DT)):
+        to_boost = velocity >= 0 and boost > 0
+        acceleration = throttle_acceleration(velocity, 1) + to_boost * BOOST_ACCELERATION
+        velocity = min(velocity + acceleration * DT, MAX_CAR_SPEED)
+        boost -= to_boost * BOOST_CONSUMPTION_RATE * DT
+
+    return max(0, boost)
+
+
+@vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
 def time_reach_velocity_simulation(desired_velocity: float, initial_velocity: float, boost_amount: float):
 
-    DT = 1 / 120
+    DT = 1 / 60
     time = 0
     velocity = initial_velocity
     boost = boost_amount
