@@ -52,7 +52,7 @@ class VelocityRange:
         if cls.use_boost:
 
             def distance_state_step(state: State) -> State:
-                if cls_max_speed <= state.vel or state.time == 0.0:
+                if cls_max_speed <= state.vel or state.time == 0.0 or state.boost == 0.0:
                     return state
 
                 time_0_boost = state.boost / BOOST_CONSUMPTION_RATE
@@ -231,10 +231,8 @@ def main():
     print(f"That's {percentage} % of our time budget.")
 
 
-if __name__ == "__main__":
-    main()
-
-    from drive_physics_experimental import distance_traveled as distance_traveled2
+def consistency():
+    from util.drive_physics_experimental import distance_traveled as distance_traveled2
 
     for time in range(0, 100):
         time = time / 10
@@ -246,3 +244,8 @@ if __name__ == "__main__":
                     print("Failed the accuracy test")
                     print(time, initial_velocity, boost_amount, " : ", res1, res2)
                     quit()
+
+
+if __name__ == "__main__":
+    main()
+    consistency()
