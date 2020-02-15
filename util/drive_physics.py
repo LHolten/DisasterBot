@@ -2,6 +2,7 @@ import math
 from collections import namedtuple
 
 from numba import vectorize, guvectorize, f8, jit
+from numba.types import UniTuple
 import numpy as np
 
 from util.special_lambertw import lambertw
@@ -273,10 +274,9 @@ distance_step_velocity_0_1400 = Velocity0To1400.wrap_distance_state_step()
 distance_step_velocity_1400_2300 = Velocity1400To2300.wrap_distance_state_step()
 
 
-@jit(f8(f8, f8, f8), nopython=True, fastmath=True)
-def distance_traveled(time: float, initial_velocity: float, boost_amount: float) -> float:
-    """Returns the max distance driven forward using boost, this allows any starting velocity
-    assuming we're not using boost when going backwards and using it otherwise."""
+@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True)
+def state_reached(time: float, initial_velocity: float, boost_amount: float) -> float:
+    """Returns the state reached after driving forward using boost."""
     state = State(0.0, initial_velocity, boost_amount, time)
 
     state = distance_step_velocity_negative(state)
@@ -284,10 +284,16 @@ def distance_traveled(time: float, initial_velocity: float, boost_amount: float)
     state = distance_step_velocity_0_1400(state)
     state = distance_step_velocity_1400_2300(state)
 
-    return state.dist + state.time * state.vel
+    return state.dist + state.time * state.vel, state.vel, state.boost
 
 
-distance_traveled_vectorized = vectorize([f8(f8, f8, f8)], nopython=True)(distance_traveled)
+@guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
+def state_reached_vectorized(
+    time: float, initial_velocity: float, boost_amount: float, out_dist, out_vel, out_boost
+) -> float:
+    for i in range(len(time)):
+        out_dist[i], out_vel[i], out_boost[i] = state_reached(time[i], initial_velocity[i], boost_amount[i])
+
 
 time_step_velocity_negative = VelocityNegative.wrap_time_reach_velocity_step()
 time_step_velocity_0_1400_boost = Velocity0To1400Boost.wrap_time_reach_velocity_step()
@@ -323,8 +329,8 @@ def main():
     boost_amount = np.linspace(0, 100, 360)
 
     def test_function():
-        # return distance_traveled_vectorized(time, initial_velocity, boost_amount)
-        return time_reach_velocity_vectorized(desired_vel, initial_velocity, boost_amount)
+        return state_reached_vectorized(time, initial_velocity, boost_amount)[0]
+        # return time_reach_velocity_vectorized(desired_vel, initial_velocity, boost_amount)
 
     print(test_function())
 
@@ -339,36 +345,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # print("Starting distance_traveled accuracy test...")
-
-    # from drive_physics_experimental import distance_traveled as distance_traveled2
-
-    # for time in range(0, 100):
-    #     time = time / 10
-    #     for initial_velocity in range(0, 2300, 100):
-    #         for boost_amount in range(0, 100, 10):
-    #             res1 = distance_traveled(time, initial_velocity, boost_amount)
-    #             res2 = distance_traveled2(time, initial_velocity, boost_amount)
-    #             if abs(res1 - res2) > 1e-4:
-    #                 print("Failed the accuracy test")
-    #                 print(time, initial_velocity, boost_amount, " : ", res1, res2)
-    #                 quit()
-
-    # print("No inaccuracies found.")
-
-    # print("Starting time_reach_velocity accuracy test...")
-
-    # from drive_physics_experimental import time_reach_velocity as time_reach_velocity2
-
-    # for desired_vel in range(-2300, 2300, 100):
-    #     for initial_velocity in range(-2300, 2300, 100):
-    #         for boost_amount in range(0, 100, 10):
-    #             res1 = time_reach_velocity(desired_vel, initial_velocity, boost_amount)
-    #             res2 = time_reach_velocity2(desired_vel, initial_velocity, boost_amount)
-    #             if abs(res1 - res2) > 1e-4:
-    #                 print("Failed the accuracy test")
-    #                 print(desired_vel, initial_velocity, boost_amount, " : ", res1, res2)
-    #                 quit()
-
-    # print("No inaccuracies found.")

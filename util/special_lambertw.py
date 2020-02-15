@@ -132,10 +132,10 @@ def main():
     fps = 120
     n_times = 10000
     time_taken = timeit(test_function, number=n_times)
-    percentage = round(time_taken * fps / n_times * 100, 5)
+    percentage = time_taken * fps / n_times * 100
 
     print(f"Took {time_taken} seconds to run {n_times} times.")
-    print(f"That's {percentage} % of our time budget.")
+    print(f"That's {percentage:.5f} % of our time budget.")
 
 
 if __name__ == "__main__":
