@@ -40,8 +40,8 @@ def throttle_acceleration(vel: float, throttle: float = 1):
         return 0
 
 
-@vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
-def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: float):
+@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, cache=True)
+def state_at_distance_simulation(max_distance: float, v_0: float, initial_boost: float):
 
     time = 0
     distance = 0
@@ -58,11 +58,20 @@ def min_travel_time_simulation(max_distance: float, v_0: float, initial_boost: f
         if time > 6:
             break
 
-    return time
+    return time, velocity, max(boost, 0)
+
+
+@guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
+def state_at_distance_simulation_vectorized(
+    max_distance: float, initial_velocity: float, boost_amount: float, out_time, out_vel, out_boost
+) -> float:
+    for i in range(len(max_distance)):
+        out_time[i], out_vel[i], out_boost[i] = state_at_distance_simulation(
+            max_distance[i], initial_velocity[i], boost_amount[i])
 
 
 @jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, cache=True)
-def state_reached_simulation(time_window: float, initial_velocity: float, boost_amount: float):
+def state_at_time_simulation(time_window: float, initial_velocity: float, boost_amount: float):
 
     distance = 0
     velocity = initial_velocity
@@ -79,11 +88,11 @@ def state_reached_simulation(time_window: float, initial_velocity: float, boost_
 
 
 @guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
-def state_reached_simulation_vectorized(
+def state_at_time_simulation_vectorized(
     time: float, initial_velocity: float, boost_amount: float, out_dist, out_vel, out_boost
 ) -> float:
     for i in range(len(time)):
-        out_dist[i], out_vel[i], out_boost[i] = state_reached_simulation(time[i], initial_velocity[i], boost_amount[i])
+        out_dist[i], out_vel[i], out_boost[i] = state_at_time_simulation(time[i], initial_velocity[i], boost_amount[i])
 
 
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
