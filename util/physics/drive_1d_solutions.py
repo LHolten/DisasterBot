@@ -1,11 +1,9 @@
 import math
 from collections import namedtuple
-
-from numba import vectorize, guvectorize, f8, jit
-from numba.types import UniTuple
-import numpy as np
+from numba import jit, f8
 
 from util.special_lambertw import lambertw
+
 
 THROTTLE_ACCELERATION_0 = 1600.0
 THROTTLE_ACCELERATION_1400 = 160.0
@@ -329,123 +327,3 @@ class VelocityNegative(VelocityRange):
     @fast_jit
     def time_travel_distance(d: float, v: float) -> float:
         return (-v + math.sqrt(2 * BREAK_ACCELERATION * d + math.pow(v, 2))) / BREAK_ACCELERATION
-
-
-distance_step_range_negative = VelocityNegative.wrap_distance_state_step()
-distance_step_range_0_1400_boost = Velocity0To1400Boost.wrap_distance_state_step()
-distance_step_range_0_1400 = Velocity0To1400.wrap_distance_state_step()
-distance_step_range_1400_2300 = Velocity1400To2300.wrap_distance_state_step()
-
-
-@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True)
-def state_at_time(time: float, initial_velocity: float, boost_amount: float) -> float:
-    """Returns the state reached after (dist, vel, boost)
-    after driving forward and using boost and reaching a certain time."""
-    if time == 0.0:
-        return 0.0, initial_velocity, boost_amount
-
-    state = State(0.0, initial_velocity, boost_amount, time)
-
-    state = distance_step_range_negative(state)
-    state = distance_step_range_0_1400_boost(state)
-    state = distance_step_range_0_1400(state)
-    state = distance_step_range_1400_2300(state)
-
-    return state.dist + state.time * state.vel, state.vel, state.boost
-
-
-@guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
-def state_reached_vectorized(
-    time: float, initial_velocity: float, boost_amount: float, out_dist, out_vel, out_boost
-) -> float:
-    """Returns the states reached (dist[], vel[], boost[]) after driving forward and using boost."""
-    for i in range(len(time)):
-        out_dist[i], out_vel[i], out_boost[i] = state_at_time(time[i], initial_velocity[i], boost_amount[i])
-
-
-time_velocity_step_range_negative = VelocityNegative.wrap_time_reach_velocity_step()
-time_velocity_step_range_0_1400_boost = Velocity0To1400Boost.wrap_time_reach_velocity_step()
-time_velocity_step_range_0_1400 = Velocity0To1400.wrap_time_reach_velocity_step()
-time_velocity_step_range_1400_2300 = Velocity1400To2300.wrap_time_reach_velocity_step()
-
-
-@jit(f8(f8, f8, f8), nopython=True, fastmath=True)
-def time_reach_velocity(desired_velocity: float, initial_velocity: float, boost_amount: float) -> float:
-    """Returns the time it takes to reach any desired velocity including those that require reversing."""
-    state = State(desired_velocity, initial_velocity, boost_amount, 0.0)
-
-    state = time_velocity_step_range_negative(state)
-    state = time_velocity_step_range_0_1400_boost(state)
-    state = time_velocity_step_range_0_1400(state)
-    state = time_velocity_step_range_1400_2300(state)
-
-    if state[0] != state.vel:
-        return 10.0
-    return state.time
-
-
-time_reach_velocity_vectorized = vectorize([f8(f8, f8, f8)], nopython=True)(time_reach_velocity)
-
-
-time_distance_step_velocity_negative = VelocityNegative.wrap_time_travel_distance_step()
-time_distance_step_velocity_0_1400_boost = Velocity0To1400Boost.wrap_time_travel_distance_step()
-time_distance_step_velocity_0_1400 = Velocity0To1400.wrap_time_travel_distance_step()
-time_distance_step_velocity_1400_2300 = Velocity1400To2300.wrap_time_travel_distance_step()
-
-
-@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True)
-def state_at_distance(distance: float, initial_velocity: float, boost_amount: float) -> float:
-    """Returns the state reached (time, vel, boost)
-    after driving forward and using boost and reaching a certain distance."""
-
-    if distance == 0:
-        return 0.0, initial_velocity, boost_amount
-
-    state = State(distance, initial_velocity, boost_amount, 0.0)
-
-    state = time_distance_step_velocity_negative(state)
-    state = time_distance_step_velocity_0_1400_boost(state)
-    state = time_distance_step_velocity_0_1400(state)
-    state = time_distance_step_velocity_1400_2300(state)
-
-    return state.time + state.dist / state.vel, state.vel, state.boost
-
-
-@guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
-def state_at_distance_vectorized(
-    distance: float, initial_velocity: float, boost_amount: float, out_time, out_vel, out_boost
-) -> float:
-    """Returns the states reached (time[], vel[], boost[])
-    after driving forward and using boost and reaching a certain distance."""
-    for i in range(len(distance)):
-        out_time[i], out_vel[i], out_boost[i] = state_at_distance(distance[i], initial_velocity[i], boost_amount[i])
-
-
-def main():
-
-    from timeit import timeit
-
-    time = np.linspace(0, 6, 360)
-    initial_velocity = np.linspace(-2300, 2300, 360)
-    desired_vel = -initial_velocity
-    desired_dist = np.linspace(0, 6000, 360)
-    boost_amount = np.linspace(0, 100, 360)
-
-    def test_function():
-        # return state_at_time_vectorized(time, initial_velocity, boost_amount)[0]
-        # return time_reach_velocity_vectorized(desired_vel, initial_velocity, boost_amount)
-        return state_at_distance_vectorized(desired_dist, initial_velocity, boost_amount)
-
-    print(test_function())
-
-    fps = 120
-    n_times = 10000
-    time_taken = timeit(test_function, number=n_times)
-    percentage = time_taken * fps / n_times * 100
-
-    print(f"Took {time_taken} seconds to run {n_times} times.")
-    print(f"That's {percentage:.5f} % of our time budget.")
-
-
-if __name__ == "__main__":
-    main()

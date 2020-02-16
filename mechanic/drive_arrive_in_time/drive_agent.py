@@ -12,11 +12,11 @@ class TestAgent(BaseTestAgent):
 
     def get_mechanic_controls(self):
 
-        if not hasattr(self, "state_reached_vectorized"):
+        if not hasattr(self, "state_at_time_vectorized"):
             # importing compiled numba functions late works better.
-            from util.drive_physics import state_reached_vectorized
+            from util.physics.drive_1d_time import state_at_time_vectorized
 
-            self.state_reached_vectorized = state_reached_vectorized
+            self.state_at_time_vectorized = state_at_time_vectorized
 
         ball_prediction = self.game_data.ball_prediction
         car = self.game_data.my_car
@@ -41,7 +41,7 @@ class TestAgent(BaseTestAgent):
 
         not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
 
-        reachable = (self.state_reached_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
+        reachable = (self.state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
 
         filtered_prediction = ball_prediction[reachable]
 

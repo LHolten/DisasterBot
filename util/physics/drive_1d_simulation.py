@@ -19,7 +19,7 @@ BOOST_MIN_ACCELERATION = BOOST_ACCELERATION * BOOST_MIN_TIME
 a = -(THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 b = THROTTLE_ACCELERATION_0
 
-DT = 1 / 120
+DT = 1 / 12000
 
 
 @vectorize([f8(f8)], nopython=True, cache=True)
@@ -96,7 +96,7 @@ def state_at_time_simulation_vectorized(
 
 
 @vectorize([f8(f8, f8, f8)], nopython=True, cache=True)
-def time_reach_velocity_simulation(desired_velocity: float, initial_velocity: float, boost_amount: float):
+def time_at_velocity_simulation(desired_velocity: float, initial_velocity: float, boost_amount: float):
 
     time = 0
     velocity = initial_velocity
@@ -136,7 +136,7 @@ def main():
     boost_amount = 100
 
     def test_function():
-        return state_reached_simulation(time, initial_velocity, boost_amount)[0]
+        return state_at_time_simulation(time, initial_velocity, boost_amount)[0]
 
     print(test_function())
 
