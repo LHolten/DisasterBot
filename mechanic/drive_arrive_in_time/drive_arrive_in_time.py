@@ -6,7 +6,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from mechanic.base_mechanic import BaseMechanic
 
 from util.numerics import clip, sign
-from util.drive_physics_simulation import (
+from util.physics.drive_1d_simulation import (
     throttle_acceleration,
     BOOST_MIN_ACCELERATION,
     BREAK_ACCELERATION,

@@ -1,7 +1,5 @@
 import numpy as np
 
-from rlbot.utils.structures.game_data_struct import FieldInfoPacket, GameTickPacket, MAX_BOOSTS
-
 
 def closest_available_boost(my_loc: np.ndarray, boost_pads: np.ndarray) -> np.ndarray:
     """Returns the closest available boost pad to my_loc"""
@@ -23,50 +21,26 @@ def main():
     """Testing for errors and performance"""
 
     from timeit import timeit
-    import ctypes
+    from rlbot.utils.structures.game_data_struct import GameTickPacket
+    from skeleton.test.skeleton_agent_test import SkeletonAgentTest, MAX_BOOSTS
 
-    num_boosts = 50
-    my_loc = np.array([150, -3500, 20])
-
-    field_info = FieldInfoPacket()
-    boost_pads = field_info.boost_pads
-    num_boosts = MAX_BOOSTS
-
-    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-    buf_from_mem.restype = ctypes.py_object
-    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-
-    dtype = np.dtype([("location", "<f4", 3), ("is_full_boost", "?")], True)
-    buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
-    converted_boost_pads = np.frombuffer(buffer, dtype)
-
-    full_dtype = [
-        ("location", "<f4", 3),
-        ("is_full_boost", "?"),
-        ("is_active", "?"),
-        ("timer", "<f4"),
-    ]
-
-    boost_pads = np.zeros(num_boosts, full_dtype)
-    boost_pads[["location", "is_full_boost"]] = converted_boost_pads
-
+    agent = SkeletonAgentTest()
     game_tick_packet = GameTickPacket()
-
-    dtype = np.dtype([("is_active", "?"), ("timer", "<f4")], True)
-    converted_game_boosts = np.array(game_tick_packet.game_boosts, copy=False).view(dtype)[:num_boosts]
-    boost_pads[["is_active", "timer"]] = converted_game_boosts
-    boost_pads["is_active"] = True
+    game_tick_packet.num_boost = MAX_BOOSTS
+    agent.initialize_agent()
 
     def test_function():
-        return closest_available_boost(my_loc, boost_pads)
+        return closest_available_boost(agent.game_data.my_car.location, agent.game_data.boost_pads)
+
+    test_function()
 
     fps = 120
     n_times = 10000
     time_taken = timeit(test_function, number=n_times)
-    percentage = round(time_taken * fps / n_times * 100, 5)
+    percentage = time_taken * fps / n_times * 100
 
     print(f"Took {time_taken} seconds to run {n_times} times.")
-    print(f"That's {percentage} % of our time budget.")
+    print(f"That's {percentage:.5f} % of our time budget.")
 
 
 if __name__ == "__main__":
