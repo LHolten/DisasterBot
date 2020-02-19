@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from rlbot.utils.structures.game_data_struct import (
     FieldInfoPacket,
     GameTickPacket,
@@ -7,6 +9,8 @@ from rlbot.utils.structures.game_data_struct import (
 )
 
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from skeleton import SkeletonAgent
 
 

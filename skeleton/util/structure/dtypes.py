@@ -121,7 +121,8 @@ dtype_GameTickPacket = np.dtype(
 
 
 # field info
-dtype_BoostPad = np.dtype([("location", dtype_Vector3), ("is_full_boost", "?")])
+dtype_BoostPad = np.dtype({"names": ["location", "is_full_boost"], "formats": [dtype_Vector3, "?"], "itemsize": 16})
+
 
 dtype_GoalInfo = np.dtype(
     {
@@ -144,3 +145,13 @@ dtype_FieldInfoPacket = np.dtype(
 dtype_Slice = np.dtype([("physics", dtype_Physics), ("game_seconds", "<f4")])
 
 dtype_BallPrediction = np.dtype([("slices", dtype_Slice * MAX_SLICES), ("num_slices", "<i4")])
+
+
+full_boost_dtype = np.dtype(
+    {
+        "names": ["location", "is_full_boost", "is_active", "timer"],
+        "formats": [dtype_Vector3, "?", "?", "<f4"],
+        "itemsize": 24,
+        "aligned": True,
+    }
+)

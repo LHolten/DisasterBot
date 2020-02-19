@@ -22,12 +22,14 @@ b = THROTTLE_ACCELERATION_0
 DT = 1 / 120
 
 
-@vectorize([f8(f8)], nopython=True, fastmath=True)
+@vectorize([f8(f8)], nopython=True, fastmath=True, cache=True)
 def sign(x: float):
-    return 1 if x >= 0 else -1
+    if x == 0:
+        return 0
+    return 1 if x > 0 else -1
 
 
-@vectorize([f8(f8, f8)], nopython=True, fastmath=True)
+@vectorize([f8(f8, f8)], nopython=True, fastmath=True, cache=True)
 def throttle_acceleration(vel: float, throttle: float = 1):
     throttle = min(1, max(-1, throttle))
     if throttle * vel < 0:
@@ -40,7 +42,7 @@ def throttle_acceleration(vel: float, throttle: float = 1):
         return 0
 
 
-@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True)
+@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True, cache=True)
 def state_at_distance_simulation(max_distance: float, v_0: float, initial_boost: float):
 
     time = 0
@@ -71,7 +73,7 @@ def state_at_distance_simulation_vectorized(
         )
 
 
-@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True)
+@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True, cache=True)
 def state_at_time_simulation(time_window: float, initial_velocity: float, boost_amount: float):
 
     distance = 0
@@ -94,7 +96,7 @@ def state_at_time_simulation_vectorized(time, initial_velocity, boost_amount, ou
         out_dist[i], out_vel[i], out_boost[i] = state_at_time_simulation(time[i], initial_velocity[i], boost_amount[i])
 
 
-@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True)
+@jit([UniTuple(f8, 3)(f8, f8, f8)], nopython=True, fastmath=True, cache=True)
 def state_at_velocity_simulation(desired_velocity: float, initial_velocity: float, boost_amount: float):
 
     time = 0

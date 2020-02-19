@@ -83,7 +83,7 @@ state_distance_step_range_0_1400 = Velocity0To1400.wrap_state_at_distance_step()
 state_distance_step_range_1400_2300 = Velocity1400To2300.wrap_state_at_distance_step()
 
 
-@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True)
+@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True, cache=True)
 def state_at_distance(distance: float, initial_velocity: float, boost_amount: float) -> float:
     """Returns the state reached (time, vel, boost)
     after driving forward and using boost and reaching a certain distance."""

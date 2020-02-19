@@ -21,7 +21,7 @@ a = -(THROTTLE_ACCELERATION_0 - THROTTLE_ACCELERATION_1400) / THROTTLE_MID_SPEED
 b = THROTTLE_ACCELERATION_0
 b2 = THROTTLE_ACCELERATION_0 + BOOST_ACCELERATION
 
-fast_jit = jit(f8(f8, f8), nopython=True, fastmath=True)
+fast_jit = jit(f8(f8, f8), nopython=True, fastmath=True, cache=True)
 
 State = namedtuple("State", ["dist", "vel", "boost", "time"])
 

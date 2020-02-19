@@ -21,7 +21,7 @@ class DriveTurnFaceTarget(BaseMechanic):
         proportional_steer = 11 * yaw_angle_to_target
         derivative_steer = 1 / 3 * car_yaw_ang_vel
 
-        if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 5:
+        if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 10:
             self.controls.handbrake = True
         else:
             self.controls.handbrake = False
@@ -38,21 +38,22 @@ class DriveTurnFaceTarget(BaseMechanic):
         if car_local_velocity[0] * self.controls.throttle < 0:
             self.controls.handbrake = False
 
-        # rendering
-        strings = [
-            f"yaw_angle_to_target : {yaw_angle_to_target:.2}",
-            f"car_yaw_ang_vel : {car_yaw_ang_vel:.2}",
-            f"steer : {self.controls.steer:.2f}",
-            f"handbrake : {self.controls.handbrake}",
-        ]
-        color = self.agent.renderer.white()
+        if self.rendering_enabled:
+            # rendering
+            strings = [
+                f"yaw_angle_to_target : {yaw_angle_to_target:.2}",
+                f"car_yaw_ang_vel : {car_yaw_ang_vel:.2}",
+                f"steer : {self.controls.steer:.2f}",
+                f"handbrake : {self.controls.handbrake}",
+            ]
+            color = self.agent.renderer.white()
 
-        self.agent.renderer.begin_rendering()
-        for i, string in enumerate(strings):
-            self.agent.renderer.draw_string_2d(20, 150 + i * 40, 2, 2, string, color)
-        self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
-        self.agent.renderer.draw_line_3d(car.location, target_loc, color)
-        self.agent.renderer.end_rendering()
+            self.agent.renderer.begin_rendering()
+            for i, string in enumerate(strings):
+                self.agent.renderer.draw_string_2d(20, 150 + i * 40, 2, 2, string, color)
+            self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
+            self.agent.renderer.draw_line_3d(car.location, target_loc, color)
+            self.agent.renderer.end_rendering()
 
         # updating status
         error = abs(car_yaw_ang_vel) + abs(yaw_angle_to_target)

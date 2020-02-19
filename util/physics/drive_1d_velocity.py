@@ -81,7 +81,7 @@ state_velocity_step_range_0_1400 = Velocity0To1400.wrap_state_at_velocity_step()
 state_velocity_step_range_1400_2300 = Velocity1400To2300.wrap_state_at_velocity_step()
 
 
-@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True)
+@jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True, cache=True)
 def state_at_velocity(desired_velocity: float, initial_velocity: float, boost_amount: float) -> float:
     """Returns the time it takes to reach any desired velocity including those that require reversing."""
     state = State(0.0, initial_velocity, boost_amount, 0.0)

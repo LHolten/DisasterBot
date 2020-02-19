@@ -2,8 +2,9 @@ from action.base_action import BaseAction
 
 
 class BasePolicy:
-    def __init__(self, agent):
+    def __init__(self, agent, rendering_enabled=False):
         self.agent = agent
+        self.rendering_enabled = rendering_enabled
         self.action: BaseAction = self.get_default_action()
 
     def get_controls(self, game_data):
