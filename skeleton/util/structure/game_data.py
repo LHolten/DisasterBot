@@ -16,7 +16,6 @@ from rlbot.utils.structures.game_data_struct import (
     GoalInfo,
     DropShotInfo,
     CollisionShape,
-    MAX_BOOSTS,
     Touch,
 )
 
@@ -111,7 +110,7 @@ class GameData:
         self.opponents = converted_game_cars[~teammates_mask]
         self.teammates = converted_game_cars[teammates_mask]
 
-    def read_game_boosts(self, game_boosts: BoostPadState * MAX_BOOSTS, num_boosts: int):
+    def read_game_boosts(self, game_boosts: List[BoostPadState], num_boosts: int):
         """Reads a list of BoostPadState ctype objects from the game tick packet,
         and updates our structured numpy array based on it's contents."""
 
@@ -140,7 +139,7 @@ class GameData:
         self.read_boost_pads(field_info.boost_pads, field_info.num_boosts)
         self.read_goals(field_info.goals, field_info.num_goals)
 
-    def read_boost_pads(self, boost_pads: BoostPad * MAX_BOOSTS, num_boosts: int):
+    def read_boost_pads(self, boost_pads: List[BoostPad], num_boosts: int):
         """Reads a list of BoostPad ctype objects from the field info,
         and converts it's contents into a structured numpy array.
         Also creates additional fields to be filled with the info from the game tick packet."""

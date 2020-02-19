@@ -1,7 +1,3 @@
-import sys
-from pathlib import Path
-from timeit import timeit
-
 from rlbot.utils.structures.game_data_struct import (
     FieldInfoPacket,
     GameTickPacket,
@@ -9,11 +5,8 @@ from rlbot.utils.structures.game_data_struct import (
     MAX_GOALS,
     MAX_PLAYERS,
 )
+
 from rlbot.utils.structures.ball_prediction_struct import BallPrediction, MAX_SLICES
-
-current_path = Path(__file__).absolute().parent
-sys.path.insert(0, str(current_path.parent.parent))
-
 from skeleton import SkeletonAgent
 
 
@@ -35,6 +28,8 @@ class SkeletonAgentTest(SkeletonAgent):
 
 def main():
     """Testing for errors and performance"""
+
+    from timeit import timeit
 
     # import cProfile
     # import pstats
