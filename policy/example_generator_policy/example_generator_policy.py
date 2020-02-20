@@ -16,7 +16,7 @@ class ExamplePolicy(BasePolicy):
         self.collect_boost_action = CollectBoost(agent, rendering_enabled)
         self.kickoff_action = Kickoff(agent, rendering_enabled)
         self.hit_ball_action = HitGroundBall(agent, rendering_enabled)
-        self.action = None
+        self.action_loop = None
 
     def get_action(self, game_data) -> BaseAction:
         ball_loc = game_data.ball.location
@@ -24,18 +24,18 @@ class ExamplePolicy(BasePolicy):
 
         if kickoff:
             # reset the action loop
-            self.action = None
+            self.action_loop = None
             return self.kickoff_action
         else:
-            if self.action is None:
-                self.action = self.action_loop(game_data)
-            return self.action.send(game_data)
+            if self.action_loop is None:
+                self.action_loop = self.create_action_loop(game_data)
+            return self.action_loop.send(game_data)
 
-    def action_loop(self, game_data) -> Generator[BaseAction]:
+    def create_action_loop(self, game_data) -> Generator[BaseAction]:
         while True:
             # choose action to do
             if game_data.my_car.boost > 20:
-                action = self.collect_boost_action
+                action = self.hit_ball_action
             else:
                 action = self.collect_boost_action
 
