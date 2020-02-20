@@ -4,22 +4,34 @@ import numpy as np
 from rlbot.agents.base_agent import SimpleControllerState
 
 from mechanic.base_mechanic import BaseMechanic
+from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 from util.numerics import clip, sign
-from util.physics.drive_1d_simulation import (
+from util.physics.drive_1d_simulation_utils import (
     throttle_acceleration,
     BOOST_MIN_ACCELERATION,
     BREAK_ACCELERATION,
     MAX_CAR_SPEED,
 )
-from util.render_utils import render_hitbox
+from util.render_utils import render_hitbox, render_car_text
 
 PI = math.pi
 
 
 class DriveArriveInTime(BaseMechanic):
+
+    turn_mechanic = None
+
     def step(self, car, target_loc, time) -> SimpleControllerState:
 
+        if self.turn_mechanic is None:
+            self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
+
+        turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
+        self.controls.steer = turn_mechanic_controls.steer
+        self.controls.handbrake = turn_mechanic_controls.handbrake
+
+        # useful variables
         delta_time = car.time - car.last_time
         if delta_time == 0:
             delta_time = 1 / 60
@@ -28,21 +40,7 @@ class DriveArriveInTime(BaseMechanic):
         car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
         distance = np.linalg.norm(target_in_local_coords)
 
-        # PD for steer
-        yaw_angle_to_target = math.atan2(target_in_local_coords[1], target_in_local_coords[0])
         car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
-        car_yaw_ang_vel = -car_ang_vel_local_coords[2]
-
-        proportional_steer = 11 * yaw_angle_to_target
-        derivative_steer = 1 / 3 * car_yaw_ang_vel
-
-        self.controls.steer = clip(proportional_steer + derivative_steer)
-
-        # basic powersliding rules
-        if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 5:
-            self.controls.handbrake = True
-        else:
-            self.controls.handbrake = False
 
         # arrive in time
         desired_vel = clip(distance / max(time - delta_time, 1e-5), -2300, 2300)
@@ -64,24 +62,27 @@ class DriveArriveInTime(BaseMechanic):
             self.controls.handbrake = self.controls.boost = False
 
         # rendering
-        strings = [
-            f"desired_vel : {desired_vel:.2f}",
-            f"time : {time:.2f}",
-            f"throttle : {self.controls.throttle:.2f}",
-        ]
-        color = self.agent.renderer.white()
+        if self.rendering_enabled:
+            text_list = [
+                f"desired_vel : {desired_vel:.2f}",
+                f"time : {time:.2f}",
+                f"throttle : {self.controls.throttle:.2f}",
+            ]
 
-        self.agent.renderer.begin_rendering()
-        for i, string in enumerate(strings):
-            self.agent.renderer.draw_string_2d(20, 150 + i * 30, 2, 2, string, color)
-        self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
-        self.agent.renderer.draw_line_3d(car.location, target_loc, color)
-        # hitbox rendering
-        render_hitbox(
-            self.agent.renderer, car.location, car.rotation_matrix, color, car.hitbox_corner, car.hitbox_offset,
-        )
-        self.agent.renderer.draw_rect_3d(car.location, 20, 20, True, self.agent.renderer.grey())
-        self.agent.renderer.end_rendering()
+            color = self.agent.renderer.white()
+
+            self.agent.renderer.begin_rendering()
+            # rendering all debug text in 3d near the car
+            render_car_text(self.agent.renderer, car, text_list, color)
+            # rendering a line from the car to the target
+            self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
+            self.agent.renderer.draw_line_3d(car.location, target_loc, color)
+            # hitbox rendering
+            render_hitbox(
+                self.agent.renderer, car.location, car.rotation_matrix, color, car.hitbox_corner, car.hitbox_offset,
+            )
+            self.agent.renderer.draw_rect_3d(car.location, 20, 20, True, self.agent.renderer.grey())
+            self.agent.renderer.end_rendering()
 
         # updating status
         if distance < 20 and abs(time) < 0.05:
@@ -106,7 +107,7 @@ def throttle_velocity(vel, desired_vel, dt):
 def boost_velocity(vel, desired_vel, throttle, dt):
     """Model based velocity boost control"""
     if desired_vel < vel or vel < 0 or vel > MAX_CAR_SPEED - 1:
-        # don't boost if we want to go or we're going backwards
+        # don't boost if we want to go or we're going backwards or we're already at max speed
         return False
     else:
         desired_accel = (desired_vel - vel) / dt

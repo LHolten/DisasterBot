@@ -35,7 +35,7 @@ class SkeletonAgent(BaseAgent):
         delta_time = time.time() - chrono_start
 
         if delta_time > 1 / 120:
-            self.logger.warn(f"Slow to execute on frame {self.game_data.counter}: " f"{delta_time * 120 * 100:.3f}%")
+            self.logger.warn(f"Slow to execute on tick {self.game_data.counter}: " f"{delta_time * 120 * 100:.3f}%")
 
         return self.controls
 

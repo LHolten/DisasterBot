@@ -14,7 +14,6 @@ class BaseTestAgent(SkeletonAgent):
 
     def get_controls(self) -> SimpleControllerState:
         self.test_process()
-        self.action.update_status(self.game_data)
         return self.action.get_controls(self.game_data)
 
     def test_process(self):
@@ -22,9 +21,5 @@ class BaseTestAgent(SkeletonAgent):
             self.matchcomms.incoming_broadcast.get_nowait()
             self.initialized = True
 
-        if self.initialized:
-            self.action.update_status(self.game_data)
-
         if self.initialized and self.action.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait("done")
-            self.initialized = False
+            self.matchcomms.outgoing_broadcast.put_nowait("pass")

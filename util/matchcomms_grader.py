@@ -17,7 +17,6 @@ class MatchcommsGrader(Grader):
             self.matchcomms.outgoing_broadcast.put_nowait("start")
 
         if not self.matchcomms.incoming_broadcast.empty():
-            print(self.matchcomms.incoming_broadcast.get_nowait())
             return Pass()
 
         return None
