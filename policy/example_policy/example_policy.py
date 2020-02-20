@@ -8,7 +8,7 @@ from action.kickoff import Kickoff
 from action.hit_ground_ball import HitGroundBall
 
 from skeleton.util.structure import GameData
-from util.generator_utils import fix_generator
+from util.generator_utils import initialize_generator
 
 from typing import Generator
 
@@ -32,7 +32,7 @@ class ExamplePolicy(BasePolicy):
         else:
             return self.action_loop.send(game_data)
 
-    @fix_generator
+    @initialize_generator
     def create_action_loop(self) -> Generator[BaseAction, GameData, None]:
         game_data = yield
 
