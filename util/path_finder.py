@@ -3,11 +3,7 @@ from collections import namedtuple
 
 from rlbot.utils.structures.game_data_struct import FieldInfoPacket, MAX_BOOSTS
 
-from util.drive_physics_simulation import (
-    min_travel_time_simulation,
-    boost_reached_simulation,
-    velocity_reached_simulation,
-)
+from util.physics.drive_1d_distance import state_at_distance
 
 import numpy as np
 
@@ -45,9 +41,8 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
                 pad_location = boost_pads[i]["location"]
 
             distance = norm(location - pad_location)
-            delta_time = min_travel_time_simulation(distance, state.vel, state.boost)
-            vel = velocity_reached_simulation(delta_time, state.vel, state.boost)
-            boost = min(boost_reached_simulation(delta_time, state.vel, state.boost) + pad_boost, 100)
+            delta_time, vel, boost = state_at_distance(distance, state.vel, state.boost)
+            boost = min(boost + pad_boost, 100)
             heapq.heappush(queue, Node(state.time + delta_time, vel, boost, i, state))
 
 
