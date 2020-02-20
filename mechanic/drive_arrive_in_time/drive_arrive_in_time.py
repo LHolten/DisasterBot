@@ -13,7 +13,7 @@ from util.physics.drive_1d_simulation_utils import (
     BREAK_ACCELERATION,
     MAX_CAR_SPEED,
 )
-from util.render_utils import render_hitbox
+from util.render_utils import render_hitbox, render_car_text
 
 PI = math.pi
 
@@ -63,16 +63,18 @@ class DriveArriveInTime(BaseMechanic):
 
         # rendering
         if self.rendering_enabled:
-            strings = [
+            text_list = [
                 f"desired_vel : {desired_vel:.2f}",
                 f"time : {time:.2f}",
                 f"throttle : {self.controls.throttle:.2f}",
             ]
+
             color = self.agent.renderer.white()
 
             self.agent.renderer.begin_rendering()
-            for i, string in enumerate(strings):
-                self.agent.renderer.draw_string_2d(20, 150 + i * 30, 2, 2, string, color)
+            # rendering all debug text in 3d near the car
+            render_car_text(self.agent.renderer, car, text_list, color)
+            # rendering a line from the car to the target
             self.agent.renderer.draw_rect_3d(target_loc, 20, 20, True, self.agent.renderer.red())
             self.agent.renderer.draw_line_3d(car.location, target_loc, color)
             # hitbox rendering
@@ -105,7 +107,7 @@ def throttle_velocity(vel, desired_vel, dt):
 def boost_velocity(vel, desired_vel, throttle, dt):
     """Model based velocity boost control"""
     if desired_vel < vel or vel < 0 or vel > MAX_CAR_SPEED - 1:
-        # don't boost if we want to go or we're going backwards
+        # don't boost if we want to go or we're going backwards or we're already at max speed
         return False
     else:
         desired_accel = (desired_vel - vel) / dt
