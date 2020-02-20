@@ -6,22 +6,17 @@ from action.base_action import BaseAction
 from mechanic.drive_arrive_in_time import DriveArriveInTime
 
 from util.collision_utils import box_ball_collision_distance, box_ball_location_on_collision
+from util.physics.drive_1d_time import state_at_time_vectorized
 
 
 class HitGroundBall(BaseAction):
 
     mechanic = None
-    state_at_time_vectorized = None
 
     def get_controls(self, game_data) -> SimpleControllerState:
 
         if self.mechanic is None:
             self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
-
-            # importing compiled numba functions late works better.
-            from util.physics.drive_1d_time import state_at_time_vectorized
-
-            self.state_at_time_vectorized = state_at_time_vectorized
 
         ball_prediction = game_data.ball_prediction
         car = game_data.my_car
@@ -46,7 +41,7 @@ class HitGroundBall(BaseAction):
 
         not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
 
-        reachable = (self.state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
+        reachable = (state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
 
         filtered_prediction = ball_prediction[reachable]
 

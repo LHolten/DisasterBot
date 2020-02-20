@@ -17,7 +17,7 @@ from rlbot.utils.structures.game_data_struct import (
 )
 from rlbot.utils.structures.ball_prediction_struct import MAX_SLICES
 
-dtype_Vector3 = np.dtype(("<f4", 3))
+dtype_Vector3 = np.dtype(("<f4", 3), align=True)
 
 # game tick packet
 dtype_Physics = np.dtype(

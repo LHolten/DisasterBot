@@ -7,7 +7,7 @@ from mechanic.base_mechanic import BaseMechanic
 from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 from util.numerics import clip, sign
-from util.physics.drive_1d_simulation import (
+from util.physics.drive_1d_simulation_utils import (
     throttle_acceleration,
     BOOST_MIN_ACCELERATION,
     BREAK_ACCELERATION,
