@@ -12,16 +12,28 @@ from util.physics.drive_1d_time import state_at_time_vectorized
 class HitGroundBall(BaseAction):
 
     mechanic = None
+    target_loc = None
+    target_time = None
 
     def get_controls(self, game_data) -> SimpleControllerState:
 
         if self.mechanic is None:
             self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
 
-        self.finished = self.mechanic.finished
+        if self.target_loc is None:
+            self.target_loc, target_dt = self.get_target_ball_state(game_data)
+            self.target_time = game_data.time + target_dt
 
-        target_loc, target_dt = self.get_target_ball_state(game_data)
-        return self.mechanic.step(game_data.my_car, target_loc, target_dt)
+        target_dt = self.target_time - game_data.time
+        self.controls = self.mechanic.step(game_data.my_car, self.target_loc, target_dt)
+
+        self.finished = bool(self.mechanic.finished)
+
+        if target_dt < 0:
+            self.target_loc = None
+            self.failed = True
+
+        return self.controls
 
     @staticmethod
     def get_target_ball_state(game_data):
@@ -37,7 +49,7 @@ class HitGroundBall(BaseAction):
         origin_height = 16  # the car's elevation from the ground due to wheels and suspension
 
         # only accurate if we're already moving towards the target
-        velocity = car.velocity[None, :]
+        velocity = np.array([np.linalg.norm(car.velocity)] * len(ball_prediction))
         boost = np.array([car.boost] * len(ball_prediction))
 
         location_slices = ball_prediction["physics"]["location"]
@@ -49,6 +61,7 @@ class HitGroundBall(BaseAction):
 
         not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
 
+        velocity = car.velocity[None, :]
         direction_slices = location_slices - car.location
         velocity = np.sum(velocity * direction_slices, 1) / np.linalg.norm(direction_slices, 2, 1)
 
