@@ -17,7 +17,7 @@ class DriveNavigateBoost(BaseMechanic):
         if self.turn_mechanic is None:
             self.turn_mechanic = DriveArriveInTime(self.agent, rendering_enabled=True)
 
-        path = find_fastest_path(boost_pads, car.location, target_loc, norm(car.velocity), car.boost)
+        path = find_fastest_path(boost_pads, car.location, target_loc, car.velocity, car.boost)
         target = first_target(boost_pads, target_loc, path)
 
         # updating status

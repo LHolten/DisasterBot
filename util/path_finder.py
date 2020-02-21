@@ -5,19 +5,29 @@ from util.physics.drive_1d_distance import state_at_distance
 
 import numpy as np
 
-from util.linear_algebra import norm
+from util.linear_algebra import norm, dot
+
+from dataclasses import dataclass, field
+from typing import Any
+
+
+@dataclass(order=True)
+class PrioritizedItem:
+    priority: int
+    item: Any = field(compare=False)
+
 
 Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 
 
-def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: float, boost: float):
-    queue = [Node(0, vel, boost, -2, None)]
+def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float):
+    queue = [PrioritizedItem(0, Node(0, vel, boost, -2, None))]
 
     # -1 is target, -2 is start
     boost_indices = set(range(boost_pads.shape[0])) | {-1, -2}
 
     while True:
-        state: Node = heapq.heappop(queue)
+        state: Node = heapq.heappop(queue).item
 
         if state.i == -1:
             return state
@@ -36,8 +46,11 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
             if i != -1:
                 pad_location = boost_pads[i]["location"]
 
-            distance = norm(location - pad_location)
-            delta_time, vel, boost = state_at_distance(distance, state.vel, state.boost)
+            relative_location = pad_location - location
+            distance = norm(relative_location)
+            node_direction = relative_location / distance
+            vel_to_node = dot(state.vel, node_direction)
+            delta_time, vel, boost = state_at_distance(distance, vel_to_node, state.boost)
             time = state.time + delta_time
 
             if i != -1:
@@ -47,7 +60,7 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
                     pad_boost = 100 if boost_pads[i]["is_full_boost"] else 12
                     boost = min(boost + pad_boost, 100)
 
-            heapq.heappush(queue, Node(time, vel, boost, i, state))
+            heapq.heappush(queue, PrioritizedItem(time, Node(time, node_direction * vel, boost, i, state)))
 
 
 def first_target(boost_pads: np.ndarray, target: np.ndarray, route: Node):

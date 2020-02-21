@@ -37,7 +37,7 @@ class HitGroundBall(BaseAction):
         origin_height = 16  # the car's elevation from the ground due to wheels and suspension
 
         # only accurate if we're already moving towards the target
-        velocity = np.array([np.linalg.norm(car.velocity)] * len(ball_prediction))
+        velocity = car.velocity[None, :]
         boost = np.array([car.boost] * len(ball_prediction))
 
         location_slices = ball_prediction["physics"]["location"]
@@ -48,6 +48,9 @@ class HitGroundBall(BaseAction):
         time_slices = ball_prediction["game_seconds"] - game_data.time
 
         not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
+
+        direction_slices = location_slices - car.location
+        velocity = np.sum(velocity * direction_slices, 1) / np.linalg.norm(direction_slices, 2, 1)
 
         reachable = (state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
 
