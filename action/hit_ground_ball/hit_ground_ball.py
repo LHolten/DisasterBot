@@ -18,12 +18,20 @@ class HitGroundBall(BaseAction):
         if self.mechanic is None:
             self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
 
+        self.finished = self.mechanic.finished
+
+        target_loc, target_dt = self.get_target_ball_state(game_data)
+        return self.mechanic.step(game_data.my_car, target_loc, target_dt)
+
+    @staticmethod
+    def get_target_ball_state(game_data):
+
         ball_prediction = game_data.ball_prediction
         car = game_data.my_car
         ball = game_data.ball
 
-        target_loc = ball.location
-        target_dt = 0
+        target_loc = game_data.ball_prediction[-1]["physics"]["location"]
+        target_dt = game_data.ball_prediction[-1]["game_seconds"]
 
         hitbox_height = car.hitbox_corner[2] + car.hitbox_offset[2]
         origin_height = 16  # the car's elevation from the ground due to wheels and suspension
@@ -52,9 +60,7 @@ class HitGroundBall(BaseAction):
                 target_loc, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
             )
 
-        self.finished = self.mechanic.finished
-
-        return self.mechanic.step(car, target_loc, target_dt)
+        return target_loc, target_dt
 
     def is_valid(self, game_data):
         return True

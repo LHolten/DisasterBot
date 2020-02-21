@@ -5,7 +5,7 @@ from typing import Optional
 import math
 from rlbot.training.training import Grade
 from rlbot.utils.game_state_util import GameState, BallState, Physics, Rotator, Vector3, CarState
-from rlbottraining import exercise_runner
+from rlbottraining.exercise_runner import run_module, ReloadPolicy
 from rlbottraining.match_configs import make_match_config_with_bots
 from rlbottraining.rng import SeededRandomNumberGenerator
 from rlbottraining.training_exercise import TrainingExercise
@@ -58,4 +58,4 @@ def make_default_playlist():
 
 
 if __name__ == "__main__":
-    exercise_runner.run_module(Path(__file__).absolute())
+    run_module(Path(__file__).absolute(), reload_policy=ReloadPolicy.NEVER)

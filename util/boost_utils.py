@@ -17,6 +17,14 @@ def closest_available_boost(my_loc: np.ndarray, boost_pads: np.ndarray) -> np.nd
         return None
 
 
+def available_boost_pads(my_loc: np.ndarray, boost_pads: np.ndarray) -> np.ndarray:
+    """Returns a list of boost_pads that are active when we reach them."""
+    distances = np.linalg.norm(boost_pads["location"] - my_loc[None, :], axis=1)
+    recharge_time = np.where(boost_pads["is_full_boost"], 10, 4)
+    available = boost_pads["is_active"] | (distances / 2300 > recharge_time - boost_pads["timer"])
+    return boost_pads[available]
+
+
 def main():
     """Testing for errors and performance"""
 

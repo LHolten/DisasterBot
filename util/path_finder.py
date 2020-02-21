@@ -1,8 +1,6 @@
 import heapq
 from collections import namedtuple
 
-from rlbot.utils.structures.game_data_struct import FieldInfoPacket, MAX_BOOSTS
-
 from util.physics.drive_1d_distance import state_at_distance
 
 import numpy as np
@@ -59,41 +57,27 @@ def main():
     """Testing for errors and performance"""
 
     from timeit import timeit
-    import ctypes
+    from rlbot.utils.structures.game_data_struct import GameTickPacket
+    from skeleton.test.skeleton_agent_test import SkeletonAgentTest, MAX_BOOSTS
 
-    my_loc = np.array([150, -3500, 20])
-    target_loc = np.array([150, 3500, 20])
+    agent = SkeletonAgentTest()
+    game_tick_packet = GameTickPacket()
+    game_tick_packet.num_boost = MAX_BOOSTS
+    agent.initialize_agent()
 
-    field_info = FieldInfoPacket()
-    boost_pads = field_info.boost_pads
-    num_boosts = MAX_BOOSTS
-
-    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-    buf_from_mem.restype = ctypes.py_object
-    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-
-    dtype = np.dtype([("location", "<f4", 3), ("is_full_boost", "?")], True)
-    buffer = buf_from_mem(ctypes.addressof(boost_pads), dtype.itemsize * num_boosts, 0x100)
-    converted_boost_pads = np.frombuffer(buffer, dtype)
-
-    full_dtype = [
-        ("location", "<f4", 3),
-        ("is_full_boost", "?"),
-        ("is_active", "?"),
-        ("timer", "<f4"),
-    ]
-
-    boost_pads = np.zeros(num_boosts, full_dtype)
-    boost_pads[["location", "is_full_boost"]] = converted_boost_pads
+    boost_pads = agent.game_data.boost_pads
 
     boost_pads[["is_active", "timer"]] = 0
     boost_pads["is_active"] = True
+
+    my_loc = np.array([150, -3500, 20])
+    target_loc = np.array([150, 3500, 20])
 
     def test_function():
         return first_target(boost_pads, target_loc, find_fastest_path(boost_pads, my_loc, target_loc, 100, 50))
 
     fps = 120
-    n_times = 10
+    n_times = 100
     time_taken = timeit(test_function, number=n_times)
     percentage = round(time_taken * fps / n_times * 100, 5)
 
