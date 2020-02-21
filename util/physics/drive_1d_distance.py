@@ -3,7 +3,6 @@ from numba.types import UniTuple
 
 from util.physics.drive_1d_solutions import (
     State,
-    VelocityRange,
     VelocityNegative,
     Velocity0To1400Boost,
     Velocity0To1400,
@@ -12,7 +11,6 @@ from util.physics.drive_1d_solutions import (
 )
 
 
-@classmethod
 def wrap_state_at_distance_step(cls):
     """Advances the state to the soonest phase end."""
 
@@ -76,15 +74,14 @@ def wrap_state_at_distance_step(cls):
     return jit(time_travel_distance_state_step, nopython=True, fastmath=True)
 
 
-VelocityRange.wrap_state_at_distance_step = wrap_state_at_distance_step
-state_distance_step_range_negative = VelocityNegative.wrap_state_at_distance_step()
-state_distance_step_range_0_1400_boost = Velocity0To1400Boost.wrap_state_at_distance_step()
-state_distance_step_range_0_1400 = Velocity0To1400.wrap_state_at_distance_step()
-state_distance_step_range_1400_2300 = Velocity1400To2300.wrap_state_at_distance_step()
+state_distance_step_range_negative = wrap_state_at_distance_step(VelocityNegative)
+state_distance_step_range_0_1400_boost = wrap_state_at_distance_step(Velocity0To1400Boost)
+state_distance_step_range_0_1400 = wrap_state_at_distance_step(Velocity0To1400)
+state_distance_step_range_1400_2300 = wrap_state_at_distance_step(Velocity1400To2300)
 
 
 @jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True, cache=True)
-def state_at_distance(distance: float, initial_velocity: float, boost_amount: float) -> float:
+def state_at_distance(distance: float, initial_velocity: float, boost_amount: float) -> (float, float, float):
     """Returns the state reached (time, vel, boost)
     after driving forward and using boost and reaching a certain distance."""
 
@@ -102,7 +99,7 @@ def state_at_distance(distance: float, initial_velocity: float, boost_amount: fl
 
 
 @guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
-def state_at_distance_vectorized(distance, initial_velocity, boost_amount, out_time, out_vel, out_boost) -> float:
+def state_at_distance_vectorized(distance, initial_velocity, boost_amount, out_time, out_vel, out_boost) -> None:
     """Returns the states reached (time[], vel[], boost[])
     after driving forward and using boost and reaching a certain distance."""
     for i in range(len(distance)):
