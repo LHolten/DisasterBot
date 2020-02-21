@@ -32,16 +32,22 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
             location = boost_pads[state.i]["location"]
 
         for i in boost_indices:
-            pad_boost = 0
             pad_location = target
             if i != -1:
-                pad_boost = 100 if boost_pads[i]["is_full_boost"] else 12
                 pad_location = boost_pads[i]["location"]
 
             distance = norm(location - pad_location)
             delta_time, vel, boost = state_at_distance(distance, state.vel, state.boost)
-            boost = min(boost + pad_boost, 100)
-            heapq.heappush(queue, Node(state.time + delta_time, vel, boost, i, state))
+            time = state.time + delta_time
+
+            if i != -1:
+                pad_time = 10 if boost_pads[i]["is_full_boost"] else 4
+
+                if boost_pads[i]["is_active"] or boost_pads[i]["timer"] + time >= pad_time:
+                    pad_boost = 100 if boost_pads[i]["is_full_boost"] else 12
+                    boost = min(boost + pad_boost, 100)
+
+            heapq.heappush(queue, Node(time, vel, boost, i, state))
 
 
 def first_target(boost_pads: np.ndarray, target: np.ndarray, route: Node):
