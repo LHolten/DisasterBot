@@ -1,17 +1,17 @@
 import cmath
-from numba import vectorize, f8, c16
+from numba import jit, f8, c8
 
 twopi = 6.2831853071795864769252842  # 2*pi
 EXPN1 = 0.36787944117144232159553  # exp(-1)
 OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 
-@vectorize([c16(c16, c16, c16)], nopython=True, cache=True)
+@jit(c8(c8, c8, c8), nopython=True, cache=True)
 def sc_fma(x, y, z):
     return x * y + z
 
 
-@vectorize([c16(f8, f8, f8, f8, c16)], nopython=True, cache=True)
+@jit(c8(f8, f8, f8, f8, c8), nopython=True, cache=True)
 def cevalpoly(a, b, c, degree, z):
     """Evaluate a polynomial with real coefficients at a complex point.
     Note that it is more efficient than Horner's method.
@@ -29,7 +29,7 @@ def cevalpoly(a, b, c, degree, z):
     return z * a + b
 
 
-@vectorize([c16(c16)], nopython=True, cache=True)
+@jit(c8(c8), nopython=True, cache=True)
 def lambertw_branchpt(z):
     """Series for W(z, 0) around the branch point."""
     a, b, c = -1.0 / 3.0, 1.0, -1.0
@@ -38,7 +38,7 @@ def lambertw_branchpt(z):
     return cevalpoly(a, b, c, 2, p)
 
 
-@vectorize([c16(c16)], nopython=True, cache=True)
+@jit(c8(c8), nopython=True, cache=True)
 def lambertw_pade0(z):
     """(3, 2) Pade approximation for W(z, 0) around 0."""
 
@@ -52,7 +52,7 @@ def lambertw_pade0(z):
     return z * cevalpoly(num_a, num_b, num_c, 2, z) / cevalpoly(denom_a, denom_b, denom_c, 2, z)
 
 
-@vectorize([c16(c16)], nopython=True, cache=True)
+@jit(c8(c8), nopython=True, cache=True)
 def lambertw_asy(z):
     """Compute the W function using the first two terms of the
     asymptotic series.
@@ -61,7 +61,7 @@ def lambertw_asy(z):
     return w - cmath.log(w)
 
 
-@vectorize([c16(c16)], nopython=True, cache=True)
+@jit(c8(c8), nopython=True, cache=True)
 def lambertw0_scalar(z):
 
     tol = 1e-3
@@ -112,7 +112,7 @@ def lambertw0_scalar(z):
     return wn
 
 
-@vectorize([f8(f8)], nopython=True, cache=True)
+@jit(f8(f8), nopython=True, cache=True)
 def lambertw(x):
     return lambertw0_scalar(x).real
 
