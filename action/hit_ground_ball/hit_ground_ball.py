@@ -5,7 +5,7 @@ from rlbot.agents.base_agent import SimpleControllerState
 from action.base_action import BaseAction
 from mechanic.drive_arrive_in_time import DriveArriveInTime
 
-from util.collision_utils import box_ball_collision_distance, box_ball_location_on_collision
+from util.collision_utils import box_ball_collision_distance, box_ball_low_location_on_collision
 from util.physics.drive_1d_time import state_at_time_vectorized
 
 
@@ -24,7 +24,7 @@ class HitGroundBall(BaseAction):
         target_dt = self.target_time - game_data.time
         self.controls = self.mechanic.step(game_data.my_car, self.target_loc, target_dt)
 
-        self.finished = bool(self.mechanic.finished)
+        self.finished = self.mechanic.finished
 
         if target_dt < -0.05:
             self.failed = True
@@ -39,7 +39,7 @@ class HitGroundBall(BaseAction):
         ball = game_data.ball
 
         hitbox_height = car.hitbox_corner[2] + car.hitbox_offset[2]
-        origin_height = 16  # the car's elevation from the ground due to wheels and suspension
+        origin_height = 17  # the car's elevation from the ground due to wheels and suspension
 
         # only accurate if we're already moving towards the target
         boost = np.array([car.boost] * len(ball_prediction))
@@ -68,7 +68,7 @@ class HitGroundBall(BaseAction):
         if len(filtered_prediction) > 0:
             target_loc = filtered_prediction[0]["physics"]["location"]
             target_dt = filtered_prediction[0]["game_seconds"] - game_data.time
-            target_loc = box_ball_location_on_collision(
+            target_loc = box_ball_low_location_on_collision(
                 target_loc, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
             )
 
