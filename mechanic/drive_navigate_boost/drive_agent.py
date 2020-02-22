@@ -5,7 +5,7 @@ from action.hit_ground_ball import HitGroundBall
 
 class TestAgent(BaseTestAgent):
     def create_mechanic(self):
-        return DriveNavigateBoost(self)
+        return DriveNavigateBoost(self, rendering_enabled=True)
 
     def get_mechanic_controls(self):
 

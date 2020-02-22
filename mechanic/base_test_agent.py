@@ -11,7 +11,9 @@ class BaseTestAgent(SkeletonAgent):
 
     def get_controls(self) -> SimpleControllerState:
         self.test_process()
-        return self.get_mechanic_controls()
+        if self.initialized:
+            return self.get_mechanic_controls()
+        return SimpleControllerState()
 
     def create_mechanic(self) -> BaseMechanic:
         raise NotImplementedError
