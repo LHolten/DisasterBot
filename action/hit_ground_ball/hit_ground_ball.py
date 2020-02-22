@@ -29,8 +29,7 @@ class HitGroundBall(BaseAction):
 
         self.finished = bool(self.mechanic.finished)
 
-        if target_dt < 0:
-            self.target_loc = None
+        if target_dt < -0.05:
             self.failed = True
 
         return self.controls
@@ -42,14 +41,10 @@ class HitGroundBall(BaseAction):
         car = game_data.my_car
         ball = game_data.ball
 
-        target_loc = game_data.ball_prediction[-1]["physics"]["location"]
-        target_dt = game_data.ball_prediction[-1]["game_seconds"]
-
         hitbox_height = car.hitbox_corner[2] + car.hitbox_offset[2]
         origin_height = 16  # the car's elevation from the ground due to wheels and suspension
 
         # only accurate if we're already moving towards the target
-        velocity = np.array([np.linalg.norm(car.velocity)] * len(ball_prediction))
         boost = np.array([car.boost] * len(ball_prediction))
 
         location_slices = ball_prediction["physics"]["location"]
@@ -65,9 +60,13 @@ class HitGroundBall(BaseAction):
         direction_slices = location_slices - car.location
         velocity = np.sum(velocity * direction_slices, 1) / np.linalg.norm(direction_slices, 2, 1)
 
-        reachable = (state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & (not_too_high)
+        reachable = (state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & not_too_high
 
         filtered_prediction = ball_prediction[reachable]
+
+        target_loc = game_data.ball_prediction[-1]["physics"]["location"].copy()
+        target_loc[2] = origin_height
+        target_dt = game_data.ball_prediction[-1]["game_seconds"] - game_data.time
 
         if len(filtered_prediction) > 0:
             target_loc = filtered_prediction[0]["physics"]["location"]

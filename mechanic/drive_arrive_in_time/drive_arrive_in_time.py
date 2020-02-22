@@ -85,7 +85,7 @@ class DriveArriveInTime(BaseMechanic):
             self.agent.renderer.end_rendering()
 
         # updating status
-        if distance < 20 and abs(time) < 0.05:
+        if distance < 100 and abs(time) < 0.05:
             self.finished = True
         else:
             self.finished = False

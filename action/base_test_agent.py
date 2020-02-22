@@ -14,12 +14,22 @@ class BaseTestAgent(SkeletonAgent):
 
     def get_controls(self) -> SimpleControllerState:
         self.test_process()
-        return self.action.get_controls(self.game_data)
+        if self.initialized:
+            return self.action.get_controls(self.game_data)
+        return SimpleControllerState()
 
     def test_process(self):
-        if not self.initialized and not self.matchcomms.incoming_broadcast.empty():
-            self.matchcomms.incoming_broadcast.get_nowait()
-            self.initialized = True
+        incoming = self.matchcomms.incoming_broadcast
+        outgoing = self.matchcomms.outgoing_broadcast
 
-        if self.initialized and self.action.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait("pass")
+        while not incoming.empty():
+            message = incoming.get_nowait()
+            if message == "start":
+                outgoing.put_nowait("initialized")
+                self.initialized = True
+
+        if self.action.finished:
+            outgoing.put_nowait("pass")
+
+        if self.action.failed:
+            outgoing.put_nowait("fail")
