@@ -9,10 +9,5 @@ class BaseAction:
         self.finished = False
         self.failed = False
 
-    def reset_status(self):
-        self.controls = SimpleControllerState()
-        self.finished = False
-        self.failed = False
-
     def get_controls(self, game_data) -> SimpleControllerState:
         raise NotImplementedError

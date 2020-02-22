@@ -4,8 +4,8 @@ from .base_mechanic import BaseMechanic
 
 
 class BaseTestAgent(SkeletonAgent):
-    def __init__(self, name, team, index):
-        super(BaseTestAgent, self).__init__(name, team, index)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.mechanic = self.create_mechanic()
         self.initialized = False
 
@@ -20,9 +20,21 @@ class BaseTestAgent(SkeletonAgent):
         raise NotImplementedError
 
     def test_process(self):
-        if not self.initialized and not self.matchcomms.incoming_broadcast.empty():
-            self.matchcomms.incoming_broadcast.get_nowait()
-            self.initialized = True
+        incoming = self.matchcomms.incoming_broadcast
+        outgoing = self.matchcomms.outgoing_broadcast
 
-        if self.initialized and self.mechanic.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait("pass")
+        while not incoming.empty():
+            message = incoming.get_nowait()
+            if message == "start":
+                outgoing.put_nowait("initialized")
+                self.initialized = True
+
+        if self.mechanic.finished:
+            outgoing.put_nowait("pass")
+            self.mechanic = self.create_mechanic()
+            self.initialized = False
+
+        if self.mechanic.failed:
+            outgoing.put_nowait("fail")
+            self.mechanic = self.create_mechanic()
+            self.initialized = False

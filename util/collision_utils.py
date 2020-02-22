@@ -39,4 +39,4 @@ def box_ball_collision_distance(
     """Distance left until collision"""
     ball_local_loc = (ball_loc - box_loc).dot(box_rot_matrix)
     hit_local_loc = box_local_collision_location(ball_local_loc, box_corner, box_offset)
-    return np.linalg.norm(hit_local_loc - ball_local_loc, axis=1) - ball_radius
+    return np.linalg.norm(hit_local_loc - ball_local_loc, axis=-1) - ball_radius

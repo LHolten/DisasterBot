@@ -16,4 +16,4 @@ def normalize(vec: np.ndarray):
 
 
 def normalize_batch(vec: np.ndarray):
-    return vec / np.maximum(np.linalg.norm(vec), 1e-8)
+    return vec / np.maximum(np.linalg.norm(vec, axis=-1), 1e-8)

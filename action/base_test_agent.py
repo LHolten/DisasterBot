@@ -4,8 +4,8 @@ from .base_action import BaseAction
 
 
 class BaseTestAgent(SkeletonAgent):
-    def __init__(self, name, team, index):
-        super(BaseTestAgent, self).__init__(name, team, index)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.action = self.create_action()
         self.initialized = False
 
@@ -30,6 +30,10 @@ class BaseTestAgent(SkeletonAgent):
 
         if self.action.finished:
             outgoing.put_nowait("pass")
+            self.action = self.create_action()
+            self.initialized = False
 
         if self.action.failed:
             outgoing.put_nowait("fail")
+            self.action = self.create_action()
+            self.initialized = False

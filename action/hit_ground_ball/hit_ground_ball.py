@@ -10,16 +10,13 @@ from util.physics.drive_1d_time import state_at_time_vectorized
 
 
 class HitGroundBall(BaseAction):
-
-    mechanic = None
-    target_loc = None
-    target_time = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
+        self.target_loc = None
+        self.target_time = None
 
     def get_controls(self, game_data) -> SimpleControllerState:
-
-        if self.mechanic is None:
-            self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
-
         if self.target_loc is None:
             self.target_loc, target_dt = self.get_target_ball_state(game_data)
             self.target_time = game_data.time + target_dt
