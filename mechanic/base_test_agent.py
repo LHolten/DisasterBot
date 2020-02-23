@@ -1,3 +1,4 @@
+import time
 from rlbot.agents.base_agent import SimpleControllerState
 from skeleton import SkeletonAgent
 from .base_mechanic import BaseMechanic
@@ -20,6 +21,11 @@ class BaseTestAgent(SkeletonAgent):
 
     def get_mechanic_controls(self) -> SimpleControllerState:
         raise NotImplementedError
+
+    def retire(self):
+        self.matchcomms.outgoing_broadcast.put_nowait("pass")
+        while not self.matchcomms.outgoing_broadcast.empty():
+            time.sleep(0.01)
 
     def test_process(self):
         incoming = self.matchcomms.incoming_broadcast

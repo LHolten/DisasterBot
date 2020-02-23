@@ -62,7 +62,6 @@ class DriveArriveInTime(BaseMechanic):
         # rendering
         if self.rendering_enabled:
             text_list = [
-                f"rotation_pitch : {car.rotation[0]}",
                 f"target_height : {target_loc[2]}",
                 f"desired_vel : {desired_vel:.2f}",
                 f"time : {time:.2f}",
@@ -87,8 +86,8 @@ class DriveArriveInTime(BaseMechanic):
         # updating status
         if distance < 20 and abs(time) < 0.05:
             self.finished = True
-        else:
-            self.finished = False
+        if time < -0.05:
+            self.failed = True
 
         return self.controls
 

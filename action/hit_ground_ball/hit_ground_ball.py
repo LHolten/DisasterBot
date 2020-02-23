@@ -25,9 +25,7 @@ class HitGroundBall(BaseAction):
         self.controls = self.mechanic.step(game_data.my_car, self.target_loc, target_dt)
 
         self.finished = self.mechanic.finished
-
-        if target_dt < -0.05:
-            self.failed = True
+        self.failed = self.mechanic.failed
 
         return self.controls
 
