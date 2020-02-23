@@ -2,6 +2,8 @@ import numpy as np
 
 from rlbot.agents.base_agent import SimpleControllerState
 
+from skeleton.util.conversion import rotation_to_matrix
+
 from action.base_action import BaseAction
 from mechanic.drive_arrive_in_time import DriveArriveInTime
 
@@ -34,6 +36,8 @@ class HitGroundBall(BaseAction):
 
         ball_prediction = game_data.ball_prediction
         car = game_data.my_car
+        car_rot = rotation_to_matrix([0, car.rotation[1], car.rotation[2]])
+
         ball = game_data.ball
 
         hitbox_height = car.hitbox_corner[2] + car.hitbox_offset[2]
@@ -45,7 +49,7 @@ class HitGroundBall(BaseAction):
         location_slices = ball_prediction["physics"]["location"]
 
         distance_slices = box_ball_collision_distance(
-            location_slices, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
+            location_slices, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
         )
         time_slices = ball_prediction["game_seconds"] - game_data.time
 
@@ -67,7 +71,7 @@ class HitGroundBall(BaseAction):
             target_loc = filtered_prediction[0]["physics"]["location"]
             target_dt = filtered_prediction[0]["game_seconds"] - game_data.time
             target_loc = box_ball_low_location_on_collision(
-                target_loc, car.location, car.rotation_matrix, car.hitbox_corner, car.hitbox_offset, ball.radius,
+                target_loc, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
             )
 
         return target_loc, target_dt

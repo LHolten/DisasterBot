@@ -16,13 +16,18 @@ def rotator_to_numpy(rotator: Rotator):
 
 
 def rotator_to_matrix(rotator: Rotator):
-    """Converts Rotator to numpy matrix"""
-    CP = math.cos(rotator.pitch)
-    SP = math.sin(rotator.pitch)
-    CY = math.cos(rotator.yaw)
-    SY = math.sin(rotator.yaw)
-    CR = math.cos(rotator.roll)
-    SR = math.sin(rotator.roll)
+    """Converts a rotator to a numpy matrix"""
+    return rotation_to_matrix([rotator.pitch, rotator.yaw, rotator.roll])
+
+
+def rotation_to_matrix(rotation):
+    """Converts a list or an array to a numpy matrix"""
+    CP = math.cos(rotation[0])
+    SP = math.sin(rotation[0])
+    CY = math.cos(rotation[1])
+    SY = math.sin(rotation[1])
+    CR = math.cos(rotation[2])
+    SR = math.sin(rotation[2])
 
     theta = np.zeros((3, 3))
 
