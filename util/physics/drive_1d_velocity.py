@@ -1,9 +1,8 @@
-from numba import jit, f8, vectorize, guvectorize
+from numba import jit, f8, guvectorize
 from numba.types import UniTuple
 
 from util.physics.drive_1d_solutions import (
     State,
-    VelocityRange,
     VelocityNegative,
     Velocity0To1400Boost,
     Velocity0To1400,
@@ -12,7 +11,6 @@ from util.physics.drive_1d_solutions import (
 )
 
 
-@classmethod
 def wrap_state_at_velocity_step(cls):
     """Advances the state to the soonest phase end."""
 
@@ -74,15 +72,14 @@ def wrap_state_at_velocity_step(cls):
     return jit(time_reach_velocity_step, nopython=True, fastmath=True)
 
 
-VelocityRange.wrap_state_at_velocity_step = wrap_state_at_velocity_step
-state_velocity_step_range_negative = VelocityNegative.wrap_state_at_velocity_step()
-state_velocity_step_range_0_1400_boost = Velocity0To1400Boost.wrap_state_at_velocity_step()
-state_velocity_step_range_0_1400 = Velocity0To1400.wrap_state_at_velocity_step()
-state_velocity_step_range_1400_2300 = Velocity1400To2300.wrap_state_at_velocity_step()
+state_velocity_step_range_negative = wrap_state_at_velocity_step(VelocityNegative)
+state_velocity_step_range_0_1400_boost = wrap_state_at_velocity_step(Velocity0To1400Boost)
+state_velocity_step_range_0_1400 = wrap_state_at_velocity_step(Velocity0To1400)
+state_velocity_step_range_1400_2300 = wrap_state_at_velocity_step(Velocity1400To2300)
 
 
 @jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True, cache=True)
-def state_at_velocity(desired_velocity: float, initial_velocity: float, boost_amount: float) -> float:
+def state_at_velocity(desired_velocity: float, initial_velocity: float, boost_amount: float) -> (float, float, float):
     """Returns the time it takes to reach any desired velocity including those that require reversing."""
     state = State(0.0, initial_velocity, boost_amount, 0.0)
 
@@ -99,7 +96,7 @@ def state_at_velocity(desired_velocity: float, initial_velocity: float, boost_am
 @guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
 def state_at_velocity_vectorized(
     desired_velocity, initial_velocity, boost_amount, out_time, out_dist, out_boost
-) -> float:
+) -> None:
     for i in range(len(desired_velocity)):
         out_time[i], out_dist[i], out_boost[i] = state_at_velocity(
             desired_velocity[i], initial_velocity[i], boost_amount[i]

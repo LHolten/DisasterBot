@@ -1,11 +1,12 @@
+import time
 from rlbot.agents.base_agent import SimpleControllerState
 from skeleton import SkeletonAgent
 from .base_action import BaseAction
 
 
 class BaseTestAgent(SkeletonAgent):
-    def __init__(self, name, team, index):
-        super(BaseTestAgent, self).__init__(name, team, index)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.action = self.create_action()
         self.initialized = False
 
@@ -14,12 +15,31 @@ class BaseTestAgent(SkeletonAgent):
 
     def get_controls(self) -> SimpleControllerState:
         self.test_process()
-        return self.action.get_controls(self.game_data)
+        if self.initialized:
+            return self.action.get_controls(self.game_data)
+        return SimpleControllerState()
+
+    def retire(self):
+        self.matchcomms.outgoing_broadcast.put_nowait("pass")
+        while not self.matchcomms.outgoing_broadcast.empty():
+            time.sleep(0.01)
 
     def test_process(self):
-        if not self.initialized and not self.matchcomms.incoming_broadcast.empty():
-            self.matchcomms.incoming_broadcast.get_nowait()
-            self.initialized = True
+        incoming = self.matchcomms.incoming_broadcast
+        outgoing = self.matchcomms.outgoing_broadcast
 
-        if self.initialized and self.action.finished:
-            self.matchcomms.outgoing_broadcast.put_nowait("pass")
+        while not incoming.empty():
+            message = incoming.get_nowait()
+            if message == "start":
+                outgoing.put_nowait("initialized")
+                self.initialized = True
+
+        if self.action.finished:
+            outgoing.put_nowait("pass")
+            self.action = self.create_action()
+            self.initialized = False
+
+        if self.action.failed:
+            outgoing.put_nowait("fail")
+            self.action = self.create_action()
+            self.initialized = False

@@ -19,13 +19,11 @@ PI = math.pi
 
 
 class DriveArriveInTime(BaseMechanic):
-
-    turn_mechanic = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=self.rendering_enabled)
 
     def step(self, car, target_loc, time) -> SimpleControllerState:
-
-        if self.turn_mechanic is None:
-            self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
 
         turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
         self.controls.steer = turn_mechanic_controls.steer
@@ -64,6 +62,7 @@ class DriveArriveInTime(BaseMechanic):
         # rendering
         if self.rendering_enabled:
             text_list = [
+                f"target_height : {target_loc[2]}",
                 f"desired_vel : {desired_vel:.2f}",
                 f"time : {time:.2f}",
                 f"throttle : {self.controls.throttle:.2f}",
@@ -87,8 +86,8 @@ class DriveArriveInTime(BaseMechanic):
         # updating status
         if distance < 20 and abs(time) < 0.05:
             self.finished = True
-        else:
-            self.finished = False
+        if time < -0.05:
+            self.failed = True
 
         return self.controls
 

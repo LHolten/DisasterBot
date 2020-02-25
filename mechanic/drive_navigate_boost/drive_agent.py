@@ -5,10 +5,10 @@ from action.hit_ground_ball import HitGroundBall
 
 class TestAgent(BaseTestAgent):
     def create_mechanic(self):
-        return DriveNavigateBoost(self)
+        return DriveNavigateBoost(self, rendering_enabled=True)
 
     def get_mechanic_controls(self):
 
         target_loc, target_dt = HitGroundBall.get_target_ball_state(self.game_data)
 
-        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc)
+        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc, target_dt)
