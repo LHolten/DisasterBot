@@ -1,4 +1,3 @@
-import numpy as np
 from numba import jit, f8, guvectorize
 from numba.types import UniTuple
 
@@ -105,22 +104,6 @@ def state_at_distance_vectorized(distance, initial_velocity, boost_amount, out_t
     after driving forward and using boost and reaching a certain distance."""
     for i in range(len(distance)):
         out_time[i], out_vel[i], out_boost[i] = state_at_distance(distance[i], initial_velocity[i], boost_amount[i])
-
-
-def state_at_distance_heuristic(rel_loc, vel, boost):
-    distance = np.linalg.norm(rel_loc)
-    direction = rel_loc / np.maximum(distance, 1e-9)
-    vel_to_target = np.dot(vel, direction)
-    time, vel, boost = state_at_distance(distance, vel_to_target, boost)
-    return time, vel * direction, boost
-
-
-def state_at_distance_heuristic_vectorized(rel_loc, vel, boost):
-    distance = np.linalg.norm(rel_loc, axis=1)
-    direction = rel_loc / np.maximum(distance, 1e-9)[:, None]
-    vel_to_target = np.inner(vel, direction).diagonal()
-    time, vel, boost = state_at_distance_vectorized(distance, vel_to_target, boost)
-    return time, vel[:, None] * direction, boost
 
 
 def main():

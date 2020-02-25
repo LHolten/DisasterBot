@@ -21,7 +21,7 @@ class DriveNavigateBoost(BaseMechanic):
         time = target_dt if (target == target_loc).all() else 0
 
         # updating status
-        if norm(car.location - target_loc) < 40 and abs(target_dt) < 0.05:
+        if norm(car.location - target_loc) < 25 and abs(target_dt) < 0.05:
             self.finished = True
         else:
             self.finished = False

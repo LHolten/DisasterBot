@@ -1,11 +1,9 @@
 import heapq
 from collections import namedtuple
 
-from util.physics.drive_1d_distance import state_at_distance_heuristic, state_at_distance_heuristic_vectorized
+from util.physics.drive_1d_heuristic import state_at_distance_heuristic, state_at_distance_heuristic_vectorized
 
 import numpy as np
-
-from util.linear_algebra import norm, dot
 
 from dataclasses import dataclass, field
 from typing import Any
