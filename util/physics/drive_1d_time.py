@@ -3,7 +3,6 @@ from numba.types import UniTuple
 
 from util.physics.drive_1d_solutions import (
     State,
-    VelocityRange,
     VelocityNegative,
     Velocity0To1400Boost,
     Velocity0To1400,
@@ -12,7 +11,6 @@ from util.physics.drive_1d_solutions import (
 )
 
 
-@classmethod
 def wrap_state_at_time_step(cls):
     """Advances the state to the soonest phase end."""
 
@@ -71,15 +69,14 @@ def wrap_state_at_time_step(cls):
     return jit(distance_state_step, nopython=True, fastmath=True)
 
 
-VelocityRange.wrap_state_at_time_step = wrap_state_at_time_step
-state_time_range_negative = VelocityNegative.wrap_state_at_time_step()
-state_time_range_0_1400_boost = Velocity0To1400Boost.wrap_state_at_time_step()
-state_time_range_0_1400 = Velocity0To1400.wrap_state_at_time_step()
-state_time_range_1400_2300 = Velocity1400To2300.wrap_state_at_time_step()
+state_time_range_negative = wrap_state_at_time_step(VelocityNegative)
+state_time_range_0_1400_boost = wrap_state_at_time_step(Velocity0To1400Boost)
+state_time_range_0_1400 = wrap_state_at_time_step(Velocity0To1400)
+state_time_range_1400_2300 = wrap_state_at_time_step(Velocity1400To2300)
 
 
 @jit(UniTuple(f8, 3)(f8, f8, f8), nopython=True, fastmath=True, cache=True)
-def state_at_time(time: float, initial_velocity: float, boost_amount: float) -> float:
+def state_at_time(time: float, initial_velocity: float, boost_amount: float) -> (float, float, float):
     """Returns the state reached (dist, vel, boost)
     after driving forward and using boost and reaching a certain time."""
     if time == 0.0:
@@ -96,7 +93,7 @@ def state_at_time(time: float, initial_velocity: float, boost_amount: float) -> 
 
 
 @guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)
-def state_at_time_vectorized(time, initial_velocity, boost_amount, out_dist, out_vel, out_boost) -> float:
+def state_at_time_vectorized(time, initial_velocity, boost_amount, out_dist, out_vel, out_boost) -> None:
     """Returns the states reached (dist[], vel[], boost[]) after driving forward and using boost."""
     for i in range(len(time)):
         out_dist[i], out_vel[i], out_boost[i] = state_at_time(time[i], initial_velocity[i], boost_amount[i])

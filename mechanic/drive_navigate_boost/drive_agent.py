@@ -1,15 +1,14 @@
 from mechanic.base_test_agent import BaseTestAgent
-from mechanic.drive_arrive_in_time import DriveArriveInTime
-
+from mechanic.drive_navigate_boost.drive_navigate_boost import DriveNavigateBoost
 from action.hit_ground_ball import HitGroundBall
 
 
 class TestAgent(BaseTestAgent):
     def create_mechanic(self):
-        return DriveArriveInTime(self, rendering_enabled=True)
+        return DriveNavigateBoost(self, rendering_enabled=True)
 
     def get_mechanic_controls(self):
 
         target_loc, target_dt = HitGroundBall.get_target_ball_state(self.game_data)
 
-        return self.mechanic.step(self.game_data.my_car, target_loc, target_dt)
+        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc, target_dt)

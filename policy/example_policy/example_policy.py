@@ -16,9 +16,7 @@ from typing import Generator
 class ExamplePolicy(BasePolicy):
     def __init__(self, agent, rendering_enabled=True):
         super(ExamplePolicy, self).__init__(agent, rendering_enabled)
-        self.collect_boost_action = CollectBoost(agent, rendering_enabled)
         self.kickoff_action = Kickoff(agent, rendering_enabled)
-        self.hit_ball_action = HitGroundBall(agent, rendering_enabled)
         self.action_loop = self.create_action_loop()
 
     def get_action(self, game_data: GameData) -> BaseAction:
@@ -39,11 +37,10 @@ class ExamplePolicy(BasePolicy):
         while True:
             # choose action to do
             if game_data.my_car.boost > 20:
-                action = self.hit_ball_action
+                action = HitGroundBall(self.agent, self.rendering_enabled)
             else:
-                action = self.collect_boost_action
+                action = CollectBoost(self.agent, self.rendering_enabled)
 
-            # reset and use action until it is finished
-            action.reset_status()
-            while not action.finished:
+            # use action until it is finished
+            while not action.finished and not action.failed:
                 game_data = yield action

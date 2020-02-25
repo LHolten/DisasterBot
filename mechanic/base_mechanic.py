@@ -7,6 +7,7 @@ class BaseMechanic:
         self.agent = agent
         self.rendering_enabled = rendering_enabled
         self.finished = False
+        self.failed = False
 
     def step(self, *args) -> SimpleControllerState:
         raise NotImplementedError
