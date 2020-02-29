@@ -15,20 +15,26 @@ from util.physics.drive_1d_simulation_utils import (
     MAX_CAR_SPEED,
 )
 from util.render_utils import render_hitbox, render_car_text
+from util.physics.drive_1d_velocity import state_at_velocity
+from util.physics.drive_1d_distance import state_at_distance
 
 PI = math.pi
 
 
-class DriveArriveInTime(BaseMechanic):
+class DriveArriveInTimeWithVel(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
 
-    def step(self, car, target_loc, time) -> SimpleControllerState:
+    def step(self, car, target_loc, time, final_vel) -> SimpleControllerState:
 
         turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
+
+        if not self.turn_mechanic.finished:
+            # continue turning until we're facing the correct way
+            return turn_mechanic_controls
+
         self.controls.steer = turn_mechanic_controls.steer
-        self.controls.handbrake = turn_mechanic_controls.handbrake
 
         # useful variables
         delta_time = car.time - car.last_time
@@ -43,6 +49,29 @@ class DriveArriveInTime(BaseMechanic):
 
         # arrive in time
         desired_vel = clip(distance / max(time - delta_time, 1e-5), -2300, 2300)
+
+        # arrive with velocity
+        current_final_vel = state_at_distance(distance, car_forward_velocity, car.boost)[1]
+        if current_final_vel >= final_vel:
+            time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, car_forward_velocity, car.boost)
+            if time_final_vel > time - delta_time:
+                desired_vel = final_vel
+            else:
+                desired_vel = clip((distance - dist_final_vel) / max(time - time_final_vel, 1e-5), -2300, 2300)
+        else:
+            time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, 0, car.boost)
+            time_0_vel, dist_0_vel, _ = state_at_velocity(0, car_forward_velocity, 0)
+            time_to_target_from_full_stop = state_at_distance(distance, 0, car.boost)[0]
+            if car_forward_velocity > 0:
+                time_dist_0, vel_dist_0, _ = state_at_distance(dist_0_vel, 0, 0)
+                time_to_target_from_full_stop = state_at_distance(distance, 0, car.boost)[0]
+                if time_dist_0 + time_to_target_from_full_stop < time - delta_time:
+                    desired_vel = -1
+            else:
+                if time_0_vel + time_to_target_from_full_stop < min(
+                    time - delta_time, time_0_vel + time_final_vel - delta_time
+                ):
+                    desired_vel = -MAX_CAR_SPEED
 
         # throttle to desired velocity
         self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel, delta_time)
@@ -63,8 +92,10 @@ class DriveArriveInTime(BaseMechanic):
         # rendering
         if self.rendering_enabled:
             text_list = [
-                f"target_height : {target_loc[2]}",
+                f"current_vel : {car_forward_velocity:.2f}",
                 f"desired_vel : {desired_vel:.2f}",
+                f"final_vel : {final_vel:.2f}",
+                f"current_final_vel : {current_final_vel:.2f}",
                 f"time : {time:.2f}",
                 f"throttle : {self.controls.throttle:.2f}",
             ]
@@ -85,7 +116,7 @@ class DriveArriveInTime(BaseMechanic):
             self.agent.renderer.end_rendering()
 
         # updating status
-        if distance < 20 and abs(time) < 0.05:
+        if distance < 20 and abs(time) < 0.05 and abs(final_vel - car_forward_velocity) < 50:
             self.finished = True
         if time < -0.05:
             self.failed = True
