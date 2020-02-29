@@ -120,6 +120,7 @@ class DriveArriveInTimeWithVel(BaseMechanic):
             self.finished = True
         if time < -0.05:
             self.failed = True
+            print("distance", distance, "time", time, "velocity", car_forward_velocity)
 
         return self.controls
 

@@ -4,7 +4,7 @@ from typing import Optional
 
 import math
 from rlbot.training.training import Grade
-from rlbot.utils.game_state_util import GameState, GameInfoState, Physics, Rotator, Vector3, CarState
+from rlbot.utils.game_state_util import GameState, BallState, GameInfoState, Physics, Rotator, Vector3, CarState
 from rlbottraining.exercise_runner import run_module, ReloadPolicy
 from rlbottraining.match_configs import make_match_config_with_bots
 from rlbottraining.rng import SeededRandomNumberGenerator
@@ -33,9 +33,15 @@ class DriveExercise(TrainingExercise):
 
         car_state = CarState(boost_amount=boost, physics=car_physics)
 
-        game_info = GameInfoState(game_speed=0.5)
+        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-4000, 4000), 93)
 
-        return GameState(cars={0: car_state}, game_info=game_info)
+        ball_state = BallState(
+            physics=Physics(location=random_position, velocity=Vector3(0, 0, 0), angular_velocity=Vector3(0, 0, 0))
+        )
+
+        game_info = GameInfoState(game_speed=1)
+
+        return GameState(cars={0: car_state}, ball=ball_state, game_info=game_info)
 
 
 # this is for first process imports
@@ -47,7 +53,7 @@ from util.matchcomms_grader import MatchcommsGrader
 
 def make_default_playlist():
     match_config = make_match_config_with_bots(blue_bots=[current_path / "drive_agent.cfg"])
-    exercise = DriveExercise(name="Drive to target", grader=MatchcommsGrader(), match_config=match_config)
+    exercise = DriveExercise(name="Drive to the target", grader=MatchcommsGrader(), match_config=match_config)
     return [exercise]
 
 
