@@ -11,9 +11,9 @@ from util.path_finder import find_fastest_path, first_target, optional_boost_tar
 class DriveNavigateBoost(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.turn_mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
 
-    def step(self, car: Player, boost_pads, target_loc, target_dt) -> SimpleControllerState:
+    def step(self, car: Player, boost_pads, target_loc, target_dt=0) -> SimpleControllerState:
         # path = find_fastest_path(boost_pads, car.location, target_loc, car.velocity, car.boost)
         # target = first_target(boost_pads, target_loc, path)
         target = optional_boost_target(boost_pads, car.location, target_loc, car.velocity, car.boost)
@@ -26,4 +26,4 @@ class DriveNavigateBoost(BaseMechanic):
         else:
             self.finished = False
 
-        return self.turn_mechanic.step(car, target, time)
+        return self.mechanic.step(car, target, time)

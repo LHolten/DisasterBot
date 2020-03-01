@@ -2,20 +2,17 @@ import math
 from rlbot.agents.base_agent import SimpleControllerState
 from action.base_action import BaseAction
 
-from mechanic.drive_arrive_in_time import DriveArriveInTime
+from mechanic.drive_navigate_boost import DriveNavigateBoost
 
 
 class Kickoff(BaseAction):
-
-    mechanic = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mechanic = DriveNavigateBoost(self.agent, self.rendering_enabled)
 
     def get_controls(self, game_data) -> SimpleControllerState:
 
-        if self.mechanic is None:
-            self.mechanic = DriveArriveInTime(self.agent, self.rendering_enabled)
-
-        self.mechanic.step(game_data.my_car, game_data.ball.location, 0)
-        self.controls = self.mechanic.controls
+        self.controls = self.mechanic.step(game_data.my_car, game_data.boost_pads, game_data.ball.location)
 
         ball_loc = game_data.ball.location
         kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1

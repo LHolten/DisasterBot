@@ -19,7 +19,9 @@ class HitGroundBall(BaseAction):
         self.target_time = None
 
     def get_controls(self, game_data) -> SimpleControllerState:
-        if self.target_loc is None:
+
+        if self.target_loc is None or True:
+            # remove "or True" to test the accuracy without recalculating each tick.
             self.target_loc, target_dt = self.get_target_ball_state(game_data)
             self.target_time = game_data.time + target_dt
 
