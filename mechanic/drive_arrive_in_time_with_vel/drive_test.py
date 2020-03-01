@@ -29,11 +29,11 @@ class DriveExercise(TrainingExercise):
             angular_velocity=Vector3(0, 0, 0),
         )
 
-        boost = rng.uniform(33, 100)
+        boost = rng.uniform(0, 100)
 
         car_state = CarState(boost_amount=boost, physics=car_physics)
 
-        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-4000, 4000), 93)
+        random_position = Vector3(rng.uniform(-3000, 3000), rng.uniform(-3000, 3000), 250)
 
         ball_state = BallState(
             physics=Physics(location=random_position, velocity=Vector3(0, 0, 0), angular_velocity=Vector3(0, 0, 0))

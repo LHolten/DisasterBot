@@ -34,8 +34,6 @@ class DriveArriveInTimeWithVel(BaseMechanic):
             # continue turning until we're facing the correct way
             return turn_mechanic_controls
 
-        self.controls.steer = turn_mechanic_controls.steer
-
         # useful variables
         delta_time = car.time - car.last_time
         if delta_time == 0:
@@ -55,25 +53,25 @@ class DriveArriveInTimeWithVel(BaseMechanic):
         if current_final_vel >= final_vel:
             time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, car_forward_velocity, car.boost)
             if time_final_vel > time - delta_time:
-                desired_vel = final_vel
+                if dist_final_vel > distance - 10:
+                    desired_vel = final_vel
             else:
                 desired_vel = clip((distance - dist_final_vel) / max(time - time_final_vel, 1e-5), -2300, 2300)
         else:
-            time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, 0, car.boost)
             time_0_vel, dist_0_vel, _ = state_at_velocity(0, car_forward_velocity, 0)
-            time_to_target_from_full_stop = state_at_distance(distance, 0, car.boost)[0]
             if car_forward_velocity > 0:
                 time_dist_0, vel_dist_0, _ = state_at_distance(dist_0_vel, 0, 0)
-                time_to_target_from_full_stop = state_at_distance(distance, 0, car.boost)[0]
-                if time_dist_0 + time_to_target_from_full_stop < time - delta_time:
+                time_to_target = state_at_distance(distance, vel_dist_0, car.boost)[0]
+                if time_dist_0 + time_to_target < time - delta_time:
                     desired_vel = -1
             else:
-                if time_0_vel + time_to_target_from_full_stop < min(
-                    time - delta_time, time_0_vel + time_final_vel - delta_time
-                ):
+                time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, 0, car.boost)
+                time_to_target_from_full_stop = state_at_distance(distance + abs(dist_0_vel), 0, car.boost)[0]
+                if time_0_vel + time_to_target_from_full_stop < min(time - delta_time, time_0_vel + time_final_vel):
                     desired_vel = -MAX_CAR_SPEED
 
         # throttle to desired velocity
+        self.controls.steer = turn_mechanic_controls.steer * sign(car_forward_velocity)
         self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel, delta_time)
 
         # boost to desired velocity
