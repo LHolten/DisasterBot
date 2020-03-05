@@ -5,15 +5,10 @@ from rlbot.agents.base_agent import SimpleControllerState
 
 from mechanic.base_mechanic import BaseMechanic
 from mechanic.drive_turn_face_target import DriveTurnFaceTarget
+from mechanic.drive_arrive_in_time import throttle_velocity, boost_velocity
 
 from util.numerics import clip, sign
-from util.physics.drive_1d_simulation_utils import (
-    throttle_acceleration,
-    BOOST_MIN_ACCELERATION,
-    BOOST_MIN_TIME,
-    BREAK_ACCELERATION,
-    MAX_CAR_SPEED,
-)
+from util.physics.drive_1d_simulation_utils import MAX_CAR_SPEED
 from util.render_utils import render_hitbox, render_car_text
 from util.physics.drive_1d_velocity import state_at_velocity
 from util.physics.drive_1d_distance import state_at_distance
@@ -43,8 +38,6 @@ class DriveArriveInTimeWithVel(BaseMechanic):
         car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
         distance = np.linalg.norm(target_in_local_coords)
 
-        car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
-
         # arrive in time
         desired_vel = clip(distance / max(time - delta_time, 1e-5), -2300, 2300)
 
@@ -71,7 +64,6 @@ class DriveArriveInTimeWithVel(BaseMechanic):
                     desired_vel = -MAX_CAR_SPEED
 
         # throttle to desired velocity
-        self.controls.steer = turn_mechanic_controls.steer * sign(car_forward_velocity)
         self.controls.throttle = throttle_velocity(car_forward_velocity, desired_vel, delta_time)
 
         # boost to desired velocity
@@ -79,13 +71,8 @@ class DriveArriveInTimeWithVel(BaseMechanic):
             car_forward_velocity, desired_vel, delta_time
         )
 
-        # This makes sure we're not powersliding
-        # if the car is spinning the opposite way we're steering towards
-        if car_ang_vel_local_coords[2] * self.controls.steer < 0:
-            self.controls.handbrake = False
-        # and also not boosting if we're sliding the opposite way we're throttling towards.
-        if car_forward_velocity * self.controls.throttle < 0:
-            self.controls.handbrake = self.controls.boost = False
+        self.controls.steer = turn_mechanic_controls.steer * sign(car_forward_velocity)
+        self.controls.handbrake = False
 
         # rendering
         if self.rendering_enabled:
@@ -118,27 +105,6 @@ class DriveArriveInTimeWithVel(BaseMechanic):
             self.finished = True
         if time < -0.05:
             self.failed = True
-            print("distance", distance, "time", time, "velocity", car_forward_velocity)
+            print("failed with distance", distance, "time", time, "velocity", car_forward_velocity)
 
         return self.controls
-
-
-def throttle_velocity(vel, desired_vel, dt):
-    """Model based throttle to velocity"""
-    desired_accel = (desired_vel - vel) / dt * sign(desired_vel)
-    if desired_accel > 0:
-        return clip(desired_accel / max(throttle_acceleration(vel, 1), 0.001)) * sign(desired_vel)
-    elif -BREAK_ACCELERATION < desired_accel <= 0:
-        return 0
-    else:
-        return -1
-
-
-def boost_velocity(vel, desired_vel, dt):
-    """Model based velocity boost control"""
-    if desired_vel < vel or vel < 0 or vel > MAX_CAR_SPEED - 1:
-        # don't boost if we want to go or we're going backwards or we're already at max speed
-        return False
-    else:
-        desired_accel = (desired_vel - vel) / dt
-        return desired_accel > (BOOST_MIN_ACCELERATION + throttle_acceleration(vel, 1) * BOOST_MIN_TIME / dt) / 2
