@@ -28,8 +28,7 @@ class DriveTurnFaceTarget(BaseMechanic):
             self.controls.handbrake = False
 
         self.controls.steer = clip(proportional_steer + derivative_steer)
-        self.controls.throttle = 1
-        self.controls.boost = not self.controls.handbrake
+        self.controls.throttle = 0.5
 
         # This makes sure we're not powersliding
         # if the car is spinning the opposite way we're steering towards
@@ -61,7 +60,5 @@ class DriveTurnFaceTarget(BaseMechanic):
 
         if error < 0.01:
             self.finished = True
-        else:
-            self.finished = False
 
         return self.controls
