@@ -6,6 +6,9 @@ from mechanic.drive_navigate_boost import DriveNavigateBoost
 
 
 class CollectBoost(BaseAction):
+
+    """Simple Action to collect 100 boost"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mechanic = DriveNavigateBoost(self.agent, self.rendering_enabled)
@@ -13,20 +16,18 @@ class CollectBoost(BaseAction):
     def get_controls(self, game_data) -> SimpleControllerState:
 
         car = game_data.my_car
+
         boost_pads = game_data.boost_pads[game_data.boost_pads["is_full_boost"]]
         boost_pad = closest_available_boost(car.location + car.velocity / 2, boost_pads)
 
-        if boost_pad is None:
-            # All boost pads are inactive.
-            self.failed = True
-            return self.controls
+        self.finished = car.boost >= 100
+        self.failed = boost_pad is None
 
-        self.controls = self.mechanic.step(game_data.my_car, game_data.boost_pads, boost_pad["location"])
+        return self.mechanic.get_controls(game_data.my_car, game_data.boost_pads, boost_pad["location"])
 
-        if car.boost == 100:
-            self.finished = True
+    def is_valid(self, game_data) -> bool:
+        boosts_are_active = len(game_data.boost_pads["is_active"]) > 0
+        return boosts_are_active and game_data.my_car.on_ground
 
-        return self.controls
-
-    def is_valid(self, game_data):
-        return len(game_data.boost_pads["is_active"]) > 0
+    def eta(self, game_data) -> float:
+        raise NotImplementedError

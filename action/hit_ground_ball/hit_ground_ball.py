@@ -12,21 +12,23 @@ from util.physics.drive_1d_time import state_at_time_vectorized
 
 
 class HitGroundBall(BaseAction):
+
+    """Action to calculate the earliest intercept point to hit the ball while only driving on the ground."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveArriveInTime(self.agent, self.rendering_enabled)
         self.target_loc = None
         self.target_time = None
 
-    def get_controls(self, game_data) -> SimpleControllerState:
+    def get_controls(self, game_data, recalculate_intercept=True) -> SimpleControllerState:
 
-        if self.target_loc is None or True:
-            # remove "or True" to test the accuracy without recalculating each tick.
+        if self.target_loc is None or recalculate_intercept:
             self.target_loc, target_dt = self.get_target_ball_state(game_data)
             self.target_time = game_data.time + target_dt
 
         target_dt = self.target_time - game_data.time
-        self.controls = self.mechanic.step(game_data.my_car, self.target_loc, target_dt)
+        self.controls = self.mechanic.get_controls(game_data.my_car, self.target_loc, target_dt)
 
         self.finished = self.mechanic.finished
         self.failed = self.mechanic.failed
@@ -37,21 +39,20 @@ class HitGroundBall(BaseAction):
     def get_target_ball_state(game_data):
 
         ball_prediction = game_data.ball_prediction
-        car = game_data.my_car
-        car_rot = rotation_to_matrix([0, car.rotation[1], car.rotation[2]])
 
         ball = game_data.ball
+        car = game_data.my_car
+        car_rot = rotation_to_matrix([0, car.rotation[1], car.rotation[2]])
 
         hitbox_height = car.hitbox_corner[2] + car.hitbox_offset[2]
         origin_height = 17  # the car's elevation from the ground due to wheels and suspension
 
-        # only accurate if we're already moving towards the target
         boost = np.array([car.boost] * len(ball_prediction), dtype=np.float64)
 
         location_slices = ball_prediction["physics"]["location"]
 
         distance_slices = box_ball_collision_distance(
-            location_slices, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
+            location_slices, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius
         )
         time_slices = np.array(ball_prediction["game_seconds"] - game_data.time, dtype=np.float64)
 
@@ -66,9 +67,9 @@ class HitGroundBall(BaseAction):
 
         filtered_prediction = ball_prediction[reachable]
 
+        # setting default values in case none of the slices are valid
         target_loc = game_data.ball_prediction[-1]["physics"]["location"].copy()
-        target_loc[2] = origin_height
-        target_dt = game_data.ball_prediction[-1]["game_seconds"] - game_data.time
+        target_dt = 6
 
         if len(filtered_prediction) > 0:
             target_loc = filtered_prediction[0]["physics"]["location"]
@@ -79,5 +80,9 @@ class HitGroundBall(BaseAction):
 
         return target_loc, target_dt
 
-    def is_valid(self, game_data):
-        return True
+    def is_valid(self, game_data) -> bool:
+        # checking for default value
+        return self.get_target_ball_state(game_data)[1] != 6
+
+    def eta(self, game_data) -> float:
+        return self.target_time - game_data.time

@@ -11,3 +11,9 @@ class BaseAction:
 
     def get_controls(self, game_data) -> SimpleControllerState:
         raise NotImplementedError
+
+    def is_valid(self, game) -> bool:
+        raise NotImplementedError
+
+    def eta(self, game) -> float:
+        raise NotImplementedError

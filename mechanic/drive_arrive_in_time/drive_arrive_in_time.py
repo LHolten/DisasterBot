@@ -7,6 +7,7 @@ from mechanic.base_mechanic import BaseMechanic
 from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 
 from util.numerics import clip, sign
+from util.linear_algebra import norm
 from util.physics.drive_1d_simulation_utils import (
     throttle_acceleration,
     BOOST_MIN_ACCELERATION,
@@ -14,30 +15,34 @@ from util.physics.drive_1d_simulation_utils import (
     BREAK_ACCELERATION,
     MAX_CAR_SPEED,
 )
+from util.physics.drive_1d_distance import state_at_distance
 from util.render_utils import render_hitbox, render_car_text
 
 PI = math.pi
 
 
 class DriveArriveInTime(BaseMechanic):
+
+    """Drive mechanic to arrive at the target location in time."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
 
-    def step(self, car, target_loc, time) -> SimpleControllerState:
+    def get_controls(self, car, target_loc, time) -> SimpleControllerState:
 
-        turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
+        turn_mechanic_controls = self.turn_mechanic.get_controls(car, target_loc)
         self.controls.steer = turn_mechanic_controls.steer
         self.controls.handbrake = turn_mechanic_controls.handbrake
 
         # useful variables
-        delta_time = car.time - car.last_time
+        delta_time = car.time - car.last_time  # we use this to better deal with input lag
         if delta_time == 0:
             delta_time = 1 / 60
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
         car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
-        distance = np.linalg.norm(target_in_local_coords)
+        distance = norm(target_in_local_coords)
 
         car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
 
@@ -87,10 +92,17 @@ class DriveArriveInTime(BaseMechanic):
         # updating status
         if distance < 20 and abs(time) < 0.05:
             self.finished = True
-        if time < -0.05:
-            self.failed = True
+        self.failed = time < -0.05
 
         return self.controls
+
+    def is_valid(self, car, target_loc, time) -> bool:
+        distance = norm(car.location - target_loc)
+        min_time = state_at_distance(distance, norm(car.velocity), car.boost)[0]
+        return min_time <= time and car.on_ground
+
+    def eta(self, car, target_loc, time) -> float:
+        return time
 
 
 def throttle_velocity(vel, desired_vel, dt):

@@ -9,7 +9,10 @@ PI = math.pi
 
 
 class DriveTurnFaceTarget(BaseMechanic):
-    def step(self, car, target_loc) -> SimpleControllerState:
+
+    """Simple drive mechanic that turns until it's facing the target location."""
+
+    def get_controls(self, car, target_loc) -> SimpleControllerState:
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
         car_local_velocity = car.velocity.dot(car.rotation_matrix)
@@ -20,7 +23,7 @@ class DriveTurnFaceTarget(BaseMechanic):
         car_yaw_ang_vel = -car_ang_vel_local_coords[2]
 
         proportional_steer = 12 * yaw_angle_to_target
-        derivative_steer = 1 / 2 * car_yaw_ang_vel
+        derivative_steer = 1 / 2.3 * car_yaw_ang_vel
 
         if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 10:
             self.controls.handbrake = True
@@ -28,7 +31,7 @@ class DriveTurnFaceTarget(BaseMechanic):
             self.controls.handbrake = False
 
         self.controls.steer = clip(proportional_steer + derivative_steer)
-        self.controls.throttle = 0.5
+        self.controls.throttle = sign(car_local_velocity[0] < 800)
 
         # This makes sure we're not powersliding
         # if the car is spinning the opposite way we're steering towards
@@ -44,6 +47,7 @@ class DriveTurnFaceTarget(BaseMechanic):
                 f"yaw_angle_to_target : {yaw_angle_to_target:.2}",
                 f"car_yaw_ang_vel : {car_yaw_ang_vel:.2}",
                 f"steer : {self.controls.steer:.2f}",
+                f"throttle : {self.controls.throttle:.2f}",
                 f"handbrake : {self.controls.handbrake}",
             ]
             color = self.agent.renderer.white()
@@ -56,9 +60,15 @@ class DriveTurnFaceTarget(BaseMechanic):
             self.agent.renderer.end_rendering()
 
         # updating status
-        error = abs(car_yaw_ang_vel) + abs(yaw_angle_to_target)
+        error = abs(car_yaw_ang_vel) / 2 + abs(yaw_angle_to_target)
 
         if error < 0.01:
             self.finished = True
 
         return self.controls
+
+    def is_valid(self, car, target) -> bool:
+        return car.on_ground
+
+    def eta(self, car, target) -> float:
+        raise NotImplementedError

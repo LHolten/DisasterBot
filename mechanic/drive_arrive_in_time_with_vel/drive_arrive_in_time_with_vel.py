@@ -17,13 +17,16 @@ PI = math.pi
 
 
 class DriveArriveInTimeWithVel(BaseMechanic):
+
+    """Drive mechanic that tries to arrive at the target location in time with a specific velocity"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
 
-    def step(self, car, target_loc, time, final_vel) -> SimpleControllerState:
+    def get_controls(self, car, target_loc, time, final_vel) -> SimpleControllerState:
 
-        turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
+        turn_mechanic_controls = self.turn_mechanic.get_controls(car, target_loc)
 
         if not self.turn_mechanic.finished:
             # continue turning until we're facing the correct way
@@ -45,9 +48,8 @@ class DriveArriveInTimeWithVel(BaseMechanic):
         current_final_vel = state_at_distance(distance, car_forward_velocity, car.boost)[1]
         if current_final_vel >= final_vel:
             time_final_vel, dist_final_vel, _ = state_at_velocity(final_vel, car_forward_velocity, car.boost)
-            if time_final_vel > time - delta_time:
-                if dist_final_vel > distance - 10:
-                    desired_vel = final_vel
+            if time_final_vel >= time - delta_time and dist_final_vel >= distance - 20:
+                desired_vel = final_vel
             else:
                 desired_vel = clip((distance - dist_final_vel) / max(time - time_final_vel, 1e-5), -2300, 2300)
         else:
@@ -72,7 +74,7 @@ class DriveArriveInTimeWithVel(BaseMechanic):
         )
 
         self.controls.steer = turn_mechanic_controls.steer * sign(car_forward_velocity)
-        self.controls.handbrake = False
+        self.controls.handbrake = turn_mechanic_controls.handbrake
 
         # rendering
         if self.rendering_enabled:
@@ -108,3 +110,9 @@ class DriveArriveInTimeWithVel(BaseMechanic):
             print("failed with distance", distance, "time", time, "velocity", car_forward_velocity)
 
         return self.controls
+
+    def is_valid(self, car, target_loc, time, final_vel) -> bool:
+        raise NotImplementedError
+
+    def eta(self, car, target_loc, time, final_vel) -> float:
+        return time

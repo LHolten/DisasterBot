@@ -9,5 +9,11 @@ class BaseMechanic:
         self.finished = False
         self.failed = False
 
-    def step(self, *args) -> SimpleControllerState:
+    def get_controls(self, *args) -> SimpleControllerState:
+        raise NotImplementedError
+
+    def is_valid(self, *args) -> bool:
+        raise NotImplementedError
+
+    def eta(self, *args) -> float:
         raise NotImplementedError
