@@ -1,7 +1,7 @@
 from mechanic.base_test_agent import BaseTestAgent
 from mechanic.drive_arrive_in_time_with_vel import DriveArriveInTimeWithVel
 
-from action.hit_ground_ball import HitGroundBall
+from util.ball_utils import get_target_ball_state
 
 
 class TestAgent(BaseTestAgent):
@@ -14,7 +14,7 @@ class TestAgent(BaseTestAgent):
 
     def get_mechanic_controls(self):
 
-        target_loc = HitGroundBall.get_target_ball_state(self.game_data)[0]
+        target_loc = get_target_ball_state(self.game_data)[0]
 
         if self.target_time is None:
             self.target_time = self.game_data.time + 6

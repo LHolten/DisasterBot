@@ -22,6 +22,13 @@ def find_fastest_path(
     queue = [(0.0, 0)]
     nodes = [Node(0.0, vel, boost, -2, 0)]
 
+    fix = True
+    for pad in boost_pads:
+        if np.dot(target - pad["location"], target_vel) >= 0:
+            fix = False
+    if fix:
+        target_vel = np.array([0.0, 0.0, 0.0])
+
     while True:
         index = heapq.heappop(queue)[1]
         state: Node = nodes[index]

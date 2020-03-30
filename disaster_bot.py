@@ -1,11 +1,11 @@
 from skeleton import SkeletonAgent
-from policy.example_policy.example_policy import ExamplePolicy
+from policy.tournament_policy import TournamentPolicy
 
 
 class DisasterBot(SkeletonAgent):
     def __init__(self, name, team, index):
         super(DisasterBot, self).__init__(name, team, index)
-        self.policy = ExamplePolicy(self)
+        self.policy = TournamentPolicy(self)
 
     def get_controls(self):
 
