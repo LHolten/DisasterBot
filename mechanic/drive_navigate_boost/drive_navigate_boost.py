@@ -16,7 +16,7 @@ class DriveNavigateBoost(BaseMechanic):
         self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
 
     def step(
-        self, car: Player, boost_pads, target_loc, target_dt=0, target_vel=np.array((0, 0, 0))
+        self, car: Player, boost_pads, target_loc, target_dt=0, target_vel=np.array((0.0, 0.0, 0.0))
     ) -> SimpleControllerState:
         path = find_fastest_path(boost_pads, car.location, target_loc, car.velocity, car.boost, target_vel)
         target = first_target(boost_pads, target_loc, path)

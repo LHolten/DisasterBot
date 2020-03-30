@@ -25,7 +25,7 @@ from skeleton.util.structure.dtypes import (
     dtype_BoostPad,
     dtype_GoalInfo,
     dtype_Slice,
-    full_boost_dtype,
+    dtype_full_boost,
 )
 from skeleton.util.conversion import (
     vector3_to_numpy,
@@ -148,7 +148,7 @@ class GameData:
         buf = buf_from_mem(ctypes.addressof(boost_pads), dtype_BoostPad.itemsize * num_boosts, BUF_READ)
         converted_boost_pads = np.frombuffer(buf, dtype_BoostPad).copy()
 
-        self.boost_pads = np.zeros(num_boosts, full_boost_dtype)
+        self.boost_pads = np.zeros(num_boosts, dtype_full_boost)
         self.boost_pads[list(dtype_BoostPad.names)] = converted_boost_pads
 
     def read_goals(self, goals: GoalInfo * MAX_GOALS, num_goals: int):

@@ -2,6 +2,10 @@ from mechanic.base_test_agent import BaseTestAgent
 from mechanic.drive_navigate_boost.drive_navigate_boost import DriveNavigateBoost
 from action.hit_ground_ball import HitGroundBall
 
+import numpy as np
+
+from skeleton.util.structure.dtypes import dtype_full_boost
+
 
 class TestAgent(BaseTestAgent):
     def create_mechanic(self):
@@ -11,6 +15,12 @@ class TestAgent(BaseTestAgent):
 
         target_loc, target_dt = HitGroundBall.get_target_ball_state(self.game_data)
 
-        target_vel = self.game_data.opp_goal.location - self.game_data.my_car.location
+        own_goal = np.zeros(1, dtype_full_boost)
+        own_goal["location"] = self.game_data.own_goal.location
+        own_goal["timer"] = -np.inf
 
-        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc, target_dt, target_vel)
+        nodes = np.concatenate([self.game_data.boost_pads, own_goal])
+
+        return self.mechanic.step(
+            self.game_data.my_car, nodes, target_loc, target_dt, self.game_data.opp_goal.location.astype(np.float64)
+        )

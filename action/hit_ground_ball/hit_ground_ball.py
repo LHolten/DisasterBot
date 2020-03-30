@@ -53,20 +53,21 @@ class HitGroundBall(BaseAction):
         distance_slices = box_ball_collision_distance(
             location_slices, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
         )
-        time_slices = np.array(ball_prediction["game_seconds"] - game_data.time, dtype=np.float64)
+        time_slices = ball_prediction["game_seconds"] - game_data.time
 
-        not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
+        # not_too_high = location_slices[:, 2] < ball.radius + hitbox_height + origin_height
+        not_too_high = location_slices[:, 2] < ball.radius + hitbox_height
 
         velocity = car.velocity[None, :]
         direction_slices = location_slices - car.location
         velocity = np.sum(velocity * direction_slices, 1) / np.linalg.norm(direction_slices, 2, 1)
-        velocity = np.array(velocity, dtype=np.float64)
+        velocity = velocity.astype(np.float64)
 
         reachable = (state_at_time_vectorized(time_slices, velocity, boost)[0] > distance_slices) & not_too_high
 
         filtered_prediction = ball_prediction[reachable]
 
-        target_loc = game_data.ball_prediction[-1]["physics"]["location"].copy()
+        target_loc = game_data.ball_prediction[-1]["physics"]["location"].astype(np.float64)
         target_loc[2] = origin_height
         target_dt = game_data.ball_prediction[-1]["game_seconds"] - game_data.time
 

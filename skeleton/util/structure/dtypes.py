@@ -135,6 +135,6 @@ dtype_Slice = np.dtype([("physics", dtype_Physics), ("game_seconds", "<f4")], al
 
 dtype_BallPrediction = np.dtype([("slices", dtype_Slice * MAX_SLICES), ("num_slices", "<i4")], align=True)
 
-full_boost_dtype = np.dtype(
-    [("location", dtype_Vector3), ("is_full_boost", "?"), ("is_active", "?"), ("timer", "<f4")], align=True
+dtype_full_boost = np.dtype(
+    [("location", float, 3), ("is_full_boost", "?"), ("is_active", "?"), ("timer", float)], align=True
 )

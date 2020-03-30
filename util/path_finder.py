@@ -1,49 +1,44 @@
 import heapq
 from collections import namedtuple
 
+from numba import njit, from_dtype, f8
+
+from skeleton.util.structure.dtypes import dtype_full_boost
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic, state_at_distance_heuristic_vectorized
 
 import numpy as np
-
-from dataclasses import dataclass, field
-from typing import Any
-
-
-@dataclass(order=True)
-class PrioritizedItem:
-    priority: int
-    item: Any = field(compare=False)
 
 
 Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 
 
+full_boost_type = from_dtype(dtype_full_boost)
+
+
+@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]))
 def find_fastest_path(
     boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_vel: np.ndarray
-) -> Node:
-    queue = [PrioritizedItem(0, Node(0, vel, boost, -2, None))]
-
-    # -1 is target, -2 is start
-    boost_indices = set(range(boost_pads.shape[0])) | {-1, -2}
+):
+    queue = [(0.0, 0)]
+    nodes = [Node(0.0, vel, boost, -2, 0)]
 
     while True:
-        state: Node = heapq.heappop(queue).item
+        index = heapq.heappop(queue)[1]
+        state: Node = nodes[index]
 
         if state.i == -1:
-            if np.dot(state.vel, target_vel) >= 0:
-                return state
+            if np.dot(state.vel, target_vel) >= 0.0:
+                return state, nodes
             continue
-
-        if state.i not in boost_indices:
-            continue
-
-        boost_indices.remove(state.i)
 
         location = start
         if state.i != -2:
             location = boost_pads[state.i]["location"]
 
-        for i in boost_indices:
+        for i in range(-1, boost_pads.shape[0]):
+            if i == state.i:
+                continue
+
             pad_location = target
             if i != -1:
                 pad_location = boost_pads[i]["location"]
@@ -61,12 +56,17 @@ def find_fastest_path(
             delta_time_end, vel_end, boost_end = state_at_distance_heuristic(target - pad_location, vel, boost)
             total_time = time + delta_time_end
 
-            heapq.heappush(queue, PrioritizedItem(total_time, Node(time, vel, boost, i, state)))
+            heapq.heappush(queue, (total_time, len(nodes)))
+            nodes.append(Node(time, vel, boost, i, index))
 
 
-def first_target(boost_pads: np.ndarray, target: np.ndarray, path: Node):
-    while path.prev.i != -2:
-        path = path.prev
+def first_target(boost_pads: np.ndarray, target: np.ndarray, route):
+    path, nodes = route
+
+    prev = nodes[path.prev]
+    while prev.i != -2:
+        path = prev
+        prev = nodes[path.prev]
 
     if path.i == -1:
         return target
