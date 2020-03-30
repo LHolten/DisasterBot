@@ -11,4 +11,6 @@ class TestAgent(BaseTestAgent):
 
         target_loc, target_dt = HitGroundBall.get_target_ball_state(self.game_data)
 
-        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc, target_dt)
+        target_vel = self.game_data.opp_goal.location - self.game_data.my_car.location
+
+        return self.mechanic.step(self.game_data.my_car, self.game_data.boost_pads, target_loc, target_dt, target_vel)

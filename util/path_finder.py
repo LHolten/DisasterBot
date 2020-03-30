@@ -18,7 +18,9 @@ class PrioritizedItem:
 Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 
 
-def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float):
+def find_fastest_path(
+    boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_vel: np.ndarray
+) -> Node:
     queue = [PrioritizedItem(0, Node(0, vel, boost, -2, None))]
 
     # -1 is target, -2 is start
@@ -28,7 +30,9 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
         state: Node = heapq.heappop(queue).item
 
         if state.i == -1:
-            return state
+            if np.dot(state.vel, target_vel) >= 0:
+                return state
+            continue
 
         if state.i not in boost_indices:
             continue
@@ -54,16 +58,19 @@ def find_fastest_path(boost_pads: np.ndarray, start: np.ndarray, target: np.ndar
                     pad_boost = 100 if boost_pads[i]["is_full_boost"] else 12
                     boost = min(boost + pad_boost, 100)
 
-            heapq.heappush(queue, PrioritizedItem(time, Node(time, vel, boost, i, state)))
+            delta_time_end, vel_end, boost_end = state_at_distance_heuristic(target - pad_location, vel, boost)
+            total_time = time + delta_time_end
+
+            heapq.heappush(queue, PrioritizedItem(total_time, Node(time, vel, boost, i, state)))
 
 
-def first_target(boost_pads: np.ndarray, target: np.ndarray, route: Node):
-    while route.prev.i != -2:
-        route = route.prev
+def first_target(boost_pads: np.ndarray, target: np.ndarray, path: Node):
+    while path.prev.i != -2:
+        path = path.prev
 
-    if route.i == -1:
+    if path.i == -1:
         return target
-    return boost_pads[route.i]["location"]
+    return boost_pads[path.i]["location"]
 
 
 def optional_boost_target(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float):
