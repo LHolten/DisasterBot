@@ -5,9 +5,10 @@ from util.physics.drive_1d_time import state_at_time_vectorized
 import numpy as np
 
 
-def get_ground_ball_intercept_state(game_data):
+def get_ground_ball_intercept_state(game_data, box_location=None):
     ball_prediction = game_data.ball_prediction
     car = game_data.my_car
+    box_location = car.location if box_location is None else box_location
     car_rot = rotation_to_matrix([0, car.rotation[1], car.rotation[2]])
 
     ball = game_data.ball
@@ -21,7 +22,7 @@ def get_ground_ball_intercept_state(game_data):
     location_slices = ball_prediction["physics"]["location"]
 
     distance_slices = box_ball_collision_distance(
-        location_slices, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
+        location_slices, box_location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
     )
     time_slices = ball_prediction["game_seconds"] - game_data.time
 
@@ -29,7 +30,7 @@ def get_ground_ball_intercept_state(game_data):
     not_too_high = location_slices[:, 2] < ball.radius + hitbox_height
 
     velocity = car.velocity[None, :]
-    direction_slices = location_slices - car.location
+    direction_slices = location_slices - box_location
     velocity = np.sum(velocity * direction_slices, 1) / np.linalg.norm(direction_slices, 2, 1)
     velocity = velocity.astype(np.float64)
 
@@ -45,7 +46,7 @@ def get_ground_ball_intercept_state(game_data):
         target_loc = filtered_prediction[0]["physics"]["location"]
         target_dt = filtered_prediction[0]["game_seconds"] - game_data.time
         target_loc = box_ball_low_location_on_collision(
-            target_loc, car.location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
+            target_loc, box_location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
         )
 
     return target_loc, target_dt

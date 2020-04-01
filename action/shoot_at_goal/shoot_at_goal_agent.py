@@ -1,7 +1,7 @@
 from action.base_test_agent import BaseTestAgent
-from action.hit_ground_ball import HitGroundBall
+from action.shoot_at_goal import ShootAtGoal
 
 
 class TestAgent(BaseTestAgent):
     def create_action(self):
-        return HitGroundBall(self, rendering_enabled=True)
+        return ShootAtGoal(self, rendering_enabled=True)
