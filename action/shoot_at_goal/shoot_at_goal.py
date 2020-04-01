@@ -16,6 +16,7 @@ class ShootAtGoal(BaseAction):
         target_dir = normalize(game_data.opp_goal.location - game_data.ball.location)
         target_dir[2] = 0
         box_location = game_data.ball.location - norm(game_data.ball.location - game_data.my_car.location) * target_dir
+        box_location[2] = game_data.my_car.location[2]
 
         target_loc, target_dt = get_ground_ball_intercept_state(game_data, box_location)
 
