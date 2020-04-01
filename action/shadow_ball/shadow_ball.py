@@ -12,12 +12,14 @@ class ShadowBall(BaseAction):
         self.mechanic = DriveArriveInTimeWithVel(self.agent, rendering_enabled=self.rendering_enabled)
 
     def get_controls(self, game_data: GameData) -> SimpleControllerState:
-        target_loc = normalize(game_data.own_goal.location - game_data.ball.location) * 1200 + game_data.ball.location
+        dt = norm(game_data.own_goal.location - game_data.ball.location) / 6000
+        ball_location = game_data.ball_prediction[int(60 * dt)]["physics"]["location"]
+        target_loc = normalize(game_data.own_goal.location - ball_location) * 1200 + ball_location
         up = game_data.my_car.rotation_matrix[:, 2]
         target_loc = target_loc - dot(target_loc - game_data.my_car.location, up) * up
         target_vel = norm(game_data.ball.velocity - dot(game_data.ball.velocity, up) * up)
 
-        controls = self.mechanic.step(game_data.my_car, target_loc, 0.5, target_vel)
+        controls = self.mechanic.step(game_data.my_car, target_loc, dt, target_vel)
 
         self.finished = self.mechanic.finished
         self.failed = self.mechanic.failed

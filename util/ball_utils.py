@@ -5,7 +5,7 @@ from util.physics.drive_1d_time import state_at_time_vectorized
 import numpy as np
 
 
-def get_target_ball_state(game_data):
+def get_ground_ball_intercept_state(game_data):
     ball_prediction = game_data.ball_prediction
     car = game_data.my_car
     car_rot = rotation_to_matrix([0, car.rotation[1], car.rotation[2]])

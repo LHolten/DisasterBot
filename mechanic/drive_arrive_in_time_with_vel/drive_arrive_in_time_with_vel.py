@@ -19,7 +19,7 @@ PI = math.pi
 class DriveArriveInTimeWithVel(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=False)
+        self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=True)
 
     def step(self, car, target_loc, time, final_vel) -> SimpleControllerState:
 

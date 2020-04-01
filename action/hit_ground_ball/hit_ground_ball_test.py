@@ -52,7 +52,7 @@ from util.matchcomms_grader import MatchcommsGrader
 
 
 def make_default_playlist():
-    match_config = make_match_config_with_bots(blue_bots=[current_path / "shadow_ball_agent.cfg"])
+    match_config = make_match_config_with_bots(blue_bots=[current_path / "hit_ground_ball_agent.cfg"])
     exercise = BallHitExercise(name="Hit the ball", grader=MatchcommsGrader(), match_config=match_config)
     return [exercise]
 

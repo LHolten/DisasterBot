@@ -20,7 +20,7 @@ class DriveTurnFaceTarget(BaseMechanic):
         car_yaw_ang_vel = -car_ang_vel_local_coords[2]
 
         proportional_steer = 12 * yaw_angle_to_target
-        derivative_steer = 1 / 2 * car_yaw_ang_vel
+        derivative_steer = 1 / 2.5 * car_yaw_ang_vel
 
         if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 10:
             self.controls.handbrake = True

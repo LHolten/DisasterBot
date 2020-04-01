@@ -4,7 +4,7 @@ from mechanic.drive_navigate_boost.drive_navigate_boost import DriveNavigateBoos
 import numpy as np
 
 from skeleton.util.structure.dtypes import dtype_full_boost
-from util.ball_utils import get_target_ball_state
+from util.ball_utils import get_ground_ball_intercept_state
 
 
 class TestAgent(BaseTestAgent):
@@ -12,7 +12,7 @@ class TestAgent(BaseTestAgent):
         return DriveNavigateBoost(self, rendering_enabled=True)
 
     def get_mechanic_controls(self):
-        target_loc, target_dt = get_target_ball_state(self.game_data)
+        target_loc, target_dt = get_ground_ball_intercept_state(self.game_data)
 
         own_goal = np.zeros(1, dtype_full_boost)
         own_goal["location"] = self.game_data.own_goal.location

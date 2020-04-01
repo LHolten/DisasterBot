@@ -2,8 +2,8 @@ from rlbot.agents.base_agent import SimpleControllerState
 
 from action.base_action import BaseAction
 from mechanic.drive_navigate_boost import DriveNavigateBoost
-from util.ball_utils import get_target_ball_state
-from util.linear_algebra import dot, normalize
+from util.ball_utils import get_ground_ball_intercept_state
+from util.linear_algebra import normalize
 
 
 class ShootAtGoal(BaseAction):
@@ -12,13 +12,13 @@ class ShootAtGoal(BaseAction):
         self.mechanic = DriveNavigateBoost(self.agent, rendering_enabled=self.rendering_enabled)
 
     def get_controls(self, game_data) -> SimpleControllerState:
-        target_loc, target_dt = get_target_ball_state(game_data)
+        target_loc, target_dt = get_ground_ball_intercept_state(game_data)
 
-        target_vel = game_data.opp_goal.location - target_loc
-        target_vel[2] = 0
+        target_dir = normalize(game_data.opp_goal.location - target_loc)
+        target_dir[2] = 0
 
         controls = self.mechanic.step(
-            game_data.my_car, game_data.boost_pads, target_loc, target_dt, target_vel.astype(float),
+            game_data.my_car, game_data.boost_pads, target_loc, target_dt, target_dir.astype(float),
         )
 
         self.finished = self.mechanic.finished
