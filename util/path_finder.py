@@ -15,7 +15,7 @@ Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 full_boost_type = from_dtype(dtype_full_boost)
 
 
-@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]))
+@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]), cache=True)
 def find_fastest_path(
     boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_dir: np.ndarray
 ):

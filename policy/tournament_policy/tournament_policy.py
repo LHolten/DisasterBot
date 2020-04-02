@@ -26,11 +26,11 @@ def get_ball_control(game_data):
                 teammate["boost"].astype(float),
             )[0]
             for teammate in game_data.teammates
-            if teammate["spawn_id"] != game_data.index
+            if teammate["spawn_id"] != game_data.my_car.spawn_id
         )
 
     opponent_time = np.inf
-    if game_data.opponents:
+    if len(game_data.opponents) > 0:
         opponent_time = min(
             state_at_distance_heuristic(
                 opponent["physics"]["location"].astype(float) - game_data.ball.location,
@@ -72,6 +72,6 @@ class TournamentPolicy(BasePolicy):
                 return self.attack
 
     def defend(self, game_data):
-        if np.linalg.norm(game_data.own_goal.location - game_data.ball.location) < 2000:
+        if np.linalg.norm(game_data.own_goal.location - game_data.ball.location) < 3000:
             return self.hit_ball
         return self.shadow

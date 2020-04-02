@@ -4,6 +4,7 @@ rlbot>=1.36.3
 rlbottraining>=0.6.1
 numpy
 numba
+scipy
 
 # This will cause pip to auto-upgrade and stop scaring people with warning messages
 pip
