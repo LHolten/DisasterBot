@@ -15,26 +15,26 @@ Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 full_boost_type = from_dtype(dtype_full_boost)
 
 
-@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]))
+@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]), cache=True)
 def find_fastest_path(
-    boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_vel: np.ndarray
+    boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_dir: np.ndarray
 ):
     queue = [(0.0, 0)]
     nodes = [Node(0.0, vel, boost, -2, 0)]
 
     fix = True
     for pad in boost_pads:
-        if np.dot(target - pad["location"], target_vel) >= 0:
+        if np.dot(target - pad["location"], target_dir) >= 0:
             fix = False
     if fix:
-        target_vel = np.array([0.0, 0.0, 0.0])
+        target_dir = np.array([0.0, 0.0, 0.0])
 
     while True:
         index = heapq.heappop(queue)[1]
         state: Node = nodes[index]
 
         if state.i == -1:
-            if np.dot(state.vel, target_vel) >= 0.0:
+            if np.dot(state.vel, target_dir) >= 0.0:
                 return state, nodes
             continue
 
@@ -134,12 +134,15 @@ def main():
     boost_pads["is_active"] = True
     boost_pads["location"] = np.random.random(boost_pads["location"].shape) * 4000
 
-    my_loc = np.array([150, -3500, 20])
-    target_loc = np.array([150, 3500, 20])
-    vel = np.array([1000, 0, 0])
+    my_loc = np.array([150.0, -3500.0, 20.0])
+    target_loc = np.array([150.0, 3500.0, 20.0])
+    vel = np.array([1000.0, 0.0, 0.0])
+    target_dir = np.array([0.0, 0.0, 0.0])
 
     def test_function():
-        return first_target(boost_pads, target_loc, find_fastest_path(boost_pads, my_loc, target_loc, vel, 50))
+        return first_target(
+            boost_pads, target_loc, find_fastest_path(boost_pads, my_loc, target_loc, vel, 50.0, target_dir)
+        )
 
     print(test_function())
 

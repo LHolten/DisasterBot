@@ -223,6 +223,7 @@ class Player(PhysicsObject):
         self.on_ground = False
         self.supersonic = False
         self.team = 0
+        self.spawn_id = 0
 
         # hitbox info
         self.hitbox_corner = np.array([59, 42, 18])
@@ -264,6 +265,7 @@ class Player(PhysicsObject):
         self.on_ground = game_car.has_wheel_contact
         self.supersonic = game_car.is_super_sonic
         self.team = game_car.team
+        self.spawn_id = game_car.spawn_id
 
         self.hitbox_corner = box_shape_to_numpy(game_car.hitbox) / 2
         self.hitbox_offset = vector3_to_numpy(game_car.hitbox_offset)

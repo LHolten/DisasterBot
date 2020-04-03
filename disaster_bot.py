@@ -5,7 +5,7 @@ from policy.tournament_policy import TournamentPolicy
 class DisasterBot(SkeletonAgent):
     def __init__(self, name, team, index):
         super(DisasterBot, self).__init__(name, team, index)
-        self.policy = TournamentPolicy(self)
+        self.policy = TournamentPolicy(self, rendering_enabled=True)
 
     def get_controls(self):
 
