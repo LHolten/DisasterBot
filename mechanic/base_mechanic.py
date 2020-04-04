@@ -9,5 +9,5 @@ class BaseMechanic:
         self.finished = False
         self.failed = False
 
-    def step(self, *args) -> SimpleControllerState:
+    def get_controls(self, *args) -> SimpleControllerState:
         raise NotImplementedError

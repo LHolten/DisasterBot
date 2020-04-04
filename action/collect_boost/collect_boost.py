@@ -21,7 +21,7 @@ class CollectBoost(BaseAction):
             self.failed = True
             return self.controls
 
-        self.controls = self.mechanic.step(game_data.my_car, game_data.boost_pads, boost_pad["location"])
+        self.controls = self.mechanic.get_controls(game_data.my_car, game_data.boost_pads, boost_pad["location"])
 
         if car.boost == 100:
             self.finished = True

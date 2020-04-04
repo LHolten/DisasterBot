@@ -9,7 +9,7 @@ from util.linear_algebra import normalize, norm
 class ShootAtGoal(BaseAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveNavigateBoost(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveNavigateBoost(self.agent, self.rendering_enabled)
 
     def get_controls(self, game_data) -> SimpleControllerState:
         # logic for tepid hits
@@ -23,7 +23,7 @@ class ShootAtGoal(BaseAction):
         target_dir = normalize(game_data.opp_goal.location - target_loc)
         target_dir[2] = 0
 
-        controls = self.mechanic.step(
+        controls = self.mechanic.get_controls(
             game_data.my_car, game_data.boost_pads, target_loc, target_dt, target_dir.astype(float),
         )
 
