@@ -5,7 +5,7 @@ from mechanic.drive_arrive_in_time import DriveArriveInTime
 from skeleton.util.structure import Player
 
 from util.linear_algebra import norm
-from util.path_finder import find_fastest_path, first_target, optional_boost_target
+from util.path_finder import find_fastest_path, first_target
 
 import numpy as np
 
@@ -13,9 +13,9 @@ import numpy as np
 class DriveNavigateBoost(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveArriveInTime(self.agent, self.rendering_enabled)
 
-    def step(self, car: Player, boost_pads, target_loc, target_dt=0, target_dir=None) -> SimpleControllerState:
+    def get_controls(self, car: Player, boost_pads, target_loc, target_dt=0, target_dir=None) -> SimpleControllerState:
         target_dir = np.array([0.0, 0.0, 0.0]) if target_dir is None else target_dir
         path = find_fastest_path(boost_pads, car.location, target_loc, car.velocity, car.boost, target_dir)
         target = first_target(boost_pads, target_loc, path)
@@ -28,4 +28,4 @@ class DriveNavigateBoost(BaseMechanic):
         else:
             self.finished = False
 
-        return self.mechanic.step(car, target, time)
+        return self.mechanic.get_controls(car, target, time)

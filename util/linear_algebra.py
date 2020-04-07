@@ -21,7 +21,7 @@ def normalize_batch(vec: np.ndarray):
 
 def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray):
     """Provides angle between 2 vectors in radians"""
-    return dot(normalize(vec1), normalize(vec2)) * math.pi
+    return math.acos(dot(normalize(vec1), normalize(vec2)))
 
 
 def optimal_intercept_vector(collider_location: np.ndarray, collider_velocity: np.ndarray, target_location: np.ndarray):

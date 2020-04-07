@@ -9,7 +9,7 @@ from util.linear_algebra import normalize, norm, dot
 class ShadowBall(BaseAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveNavigateBoost(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveNavigateBoost(self.agent, self.rendering_enabled)
 
     def get_controls(self, game_data: GameData) -> SimpleControllerState:
         dt = norm(game_data.own_goal.location - game_data.ball.location) / 6000
@@ -19,7 +19,7 @@ class ShadowBall(BaseAction):
         target_loc = target_loc - dot(target_loc - game_data.my_car.location, up) * up
         target_dir = game_data.ball.velocity - dot(game_data.ball.velocity, up) * up
 
-        controls = self.mechanic.step(game_data.my_car, game_data.boost_pads, target_loc, dt, target_dir)
+        controls = self.mechanic.get_controls(game_data.my_car, game_data.boost_pads, target_loc, dt, target_dir)
 
         self.finished = self.mechanic.finished
         self.failed = self.mechanic.failed

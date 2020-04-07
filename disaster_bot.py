@@ -10,7 +10,7 @@ class DisasterBot(SkeletonAgent):
         sys.path.insert(0, str(pathlib.Path(__file__).parent.absolute()))
 
         super(DisasterBot, self).__init__(name, team, index)
-        self.policy = TournamentPolicy(self, rendering_enabled=True)
+        self.policy = TournamentPolicy(self, rendering_enabled=False)
 
     def get_controls(self):
 

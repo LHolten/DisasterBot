@@ -22,7 +22,7 @@ class TestAgent(BaseTestAgent):
         target_dt = self.target_time - self.game_data.time
         final_vel = 2300
 
-        controls = self.mechanic.step(self.game_data.my_car, target_loc, target_dt, final_vel)
+        controls = self.mechanic.get_controls(self.game_data.my_car, target_loc, target_dt, final_vel)
 
         if self.mechanic.finished or self.mechanic.failed:
             self.target_time = None

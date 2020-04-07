@@ -11,4 +11,4 @@ class TestAgent(BaseTestAgent):
 
         target_loc, target_dt = get_ground_ball_intercept_state(self.game_data)
 
-        return self.mechanic.step(self.game_data.my_car, target_loc, target_dt)
+        return self.mechanic.get_controls(self.game_data.my_car, target_loc, target_dt)
