@@ -12,7 +12,7 @@ class Kickoff(BaseAction):
 
     def get_controls(self, game_data) -> SimpleControllerState:
 
-        self.controls = self.mechanic.step(game_data.my_car, game_data.boost_pads, game_data.ball.location)
+        self.controls = self.mechanic.get_controls(game_data.my_car, game_data.boost_pads, game_data.ball.location)
 
         ball_loc = game_data.ball.location
         kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1

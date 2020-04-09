@@ -4,7 +4,7 @@ from numba import njit, f8
 from util.physics.drive_1d_distance import state_at_distance, state_at_distance_vectorized
 
 
-@njit((f8[:], f8[:], f8))
+@njit((f8[:], f8[:], f8), cache=True)
 def state_at_distance_heuristic(rel_loc, vel, boost):
     distance = np.linalg.norm(rel_loc)
     direction = rel_loc / np.maximum(distance, 1e-9)

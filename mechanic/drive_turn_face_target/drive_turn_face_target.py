@@ -9,7 +9,7 @@ PI = math.pi
 
 
 class DriveTurnFaceTarget(BaseMechanic):
-    def step(self, car, target_loc) -> SimpleControllerState:
+    def get_controls(self, car, target_loc) -> SimpleControllerState:
 
         target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
         car_local_velocity = car.velocity.dot(car.rotation_matrix)
@@ -20,7 +20,7 @@ class DriveTurnFaceTarget(BaseMechanic):
         car_yaw_ang_vel = -car_ang_vel_local_coords[2]
 
         proportional_steer = 12 * yaw_angle_to_target
-        derivative_steer = 1 / 2.5 * car_yaw_ang_vel
+        derivative_steer = 1 / 2.3 * car_yaw_ang_vel
 
         if sign(yaw_angle_to_target) * (yaw_angle_to_target + car_yaw_ang_vel / 3) > PI / 10:
             self.controls.handbrake = True

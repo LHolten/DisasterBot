@@ -40,11 +40,7 @@ def get_ball_control(game_data):
             for opponent in game_data.opponents
         )
 
-    if own_time < teammate_time and own_time < opponent_time:
-        return "self"
-    if opponent_time < teammate_time:
-        return "opponent"
-    return "teammate"
+    return own_time, teammate_time, opponent_time
 
 
 class TournamentPolicy(BasePolicy):
@@ -63,13 +59,11 @@ class TournamentPolicy(BasePolicy):
         if kickoff:
             return self.kickoff_action
         else:
-            control = get_ball_control(game_data)
-            if control == "opponent":
-                return self.defend(game_data)
-            elif control == "teammate":
-                return self.collect_boost
-            else:
+            own, team, opp = get_ball_control(game_data)
+            if own < team and (team != np.inf or own < opp):
                 return self.attack
+            else:
+                return self.defend(game_data)
 
     def defend(self, game_data):
         if np.linalg.norm(game_data.own_goal.location - game_data.ball.location) < 3000:

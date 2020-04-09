@@ -8,4 +8,4 @@ class TestAgent(BaseTestAgent):
 
     def get_mechanic_controls(self):
 
-        return self.mechanic.step(self.game_data.my_car, self.game_data.ball.location)
+        return self.mechanic.get_controls(self.game_data.my_car, self.game_data.ball.location)

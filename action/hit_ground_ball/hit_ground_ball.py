@@ -8,7 +8,7 @@ from util.ball_utils import get_ground_ball_intercept_state
 class HitGroundBall(BaseAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveArriveInTime(self.agent, rendering_enabled=self.rendering_enabled)
+        self.mechanic = DriveArriveInTime(self.agent, self.rendering_enabled)
         self.target_loc = None
         self.target_time = None
 
@@ -20,7 +20,7 @@ class HitGroundBall(BaseAction):
             self.target_time = game_data.time + target_dt
 
         target_dt = self.target_time - game_data.time
-        self.controls = self.mechanic.step(game_data.my_car, self.target_loc, target_dt)
+        self.controls = self.mechanic.get_controls(game_data.my_car, self.target_loc, target_dt)
 
         self.finished = self.mechanic.finished
         self.failed = self.mechanic.failed

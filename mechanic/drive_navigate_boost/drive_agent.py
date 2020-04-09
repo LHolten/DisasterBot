@@ -20,6 +20,6 @@ class TestAgent(BaseTestAgent):
 
         nodes = np.concatenate([self.game_data.boost_pads, own_goal])
 
-        return self.mechanic.step(
+        return self.mechanic.get_controls(
             self.game_data.my_car, nodes, target_loc, target_dt, self.game_data.opp_goal.location.astype(np.float64)
         )

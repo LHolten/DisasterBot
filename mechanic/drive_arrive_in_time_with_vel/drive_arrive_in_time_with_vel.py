@@ -19,11 +19,11 @@ PI = math.pi
 class DriveArriveInTimeWithVel(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.turn_mechanic = DriveTurnFaceTarget(self.agent, rendering_enabled=self.rendering_enabled)
+        self.turn_mechanic = DriveTurnFaceTarget(self.agent, self.rendering_enabled)
 
-    def step(self, car, target_loc, time, final_vel=2300) -> SimpleControllerState:
+    def get_controls(self, car, target_loc, time, final_vel=2300) -> SimpleControllerState:
 
-        turn_mechanic_controls = self.turn_mechanic.step(car, target_loc)
+        turn_mechanic_controls = self.turn_mechanic.get_controls(car, target_loc)
 
         if not self.turn_mechanic.finished:
             # continue turning until we're facing the correct way
