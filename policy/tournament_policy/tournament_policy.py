@@ -17,9 +17,9 @@ def get_ball_control(game_data):
     own_time, _, _ = state_at_distance_heuristic(
         game_data.my_car.location - game_data.ball.location, game_data.my_car.velocity, game_data.my_car.boost
     )
-    teammate_time = np.inf
+    teammate_time = 0
     if len(game_data.teammates) > 1:
-        teammate_time = min(
+        teammate_time = max(
             state_at_distance_heuristic(
                 teammate["physics"]["location"].astype(float) - game_data.ball.location,
                 teammate["physics"]["velocity"].astype(float),
@@ -60,7 +60,7 @@ class TournamentPolicy(BasePolicy):
             return self.kickoff_action
         else:
             own, team, opp = get_ball_control(game_data)
-            if own < team and (team != np.inf or own < opp):
+            if own < team or own < opp:
                 if self.attack.finished:
                     self.attack = ShootAtGoal(self.agent, self.rendering_enabled)
                 return self.attack
