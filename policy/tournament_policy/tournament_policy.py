@@ -61,6 +61,8 @@ class TournamentPolicy(BasePolicy):
         else:
             own, team, opp = get_ball_control(game_data)
             if own < team and (team != np.inf or own < opp):
+                if self.attack.finished:
+                    self.attack = ShootAtGoal(self.agent, self.rendering_enabled)
                 return self.attack
             else:
                 return self.defend(game_data)
