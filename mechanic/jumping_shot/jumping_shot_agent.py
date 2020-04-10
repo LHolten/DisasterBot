@@ -8,10 +8,11 @@ from mechanic.jumping_shot import JumpingShot
 
 class TestAgent(BaseTestAgent):
     def create_mechanic(self):
+        #def __init__(self, agent, target_loc, target_time, game_packet, rendering_enabled=False)
         return JumpingShot(
             self,
             self.game_data.ball.location,
-            self.game_data.time + (self.game_data.ball.location[0] * 0.333 * 0.00833),
+            self.game_data.game_tick_packet.game_info.seconds_elapsed + (self.game_data.ball.location[2] * 0.333 * 0.00833),
             self.game_data.game_tick_packet,
             rendering_enabled=False,
         )

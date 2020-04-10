@@ -18,13 +18,17 @@ class JumpingShot(BaseMechanic):
         self.start_time = game_packet.game_info.seconds_elapsed
         self.inputs = [SimpleControllerState(jump=True), SimpleControllerState(jump=False), None]
         delay = target_time - game_packet.game_info.seconds_elapsed
-        self.timers = [delay - (1 / 120) * 3, (1 / 120) * 2, 0.25]
+        self.timers = [delay - (1 / 120) * 2, (1 / 120) * 2, 0.25]
         self.done_timer = target_time + self.timers[2]
+        print(self.timers[0],self.timers[1],target_loc[2])
 
-    def get_flip_inputs(self, car):
+    def get_flip_inputs(self, car,game_packet):
+        #ball_location = game_packet.game_ball.physics.location
+        #target_in_local_coords = normalize((np.array([ball_location.x,ball_location.y,ball_location.z]) - car.location).dot(car.rotation_matrix))
         target_in_local_coords = normalize((self.target - car.location).dot(car.rotation_matrix))
-        yaw = clip(math.atan2(target_in_local_coords[1], target_in_local_coords[0]))
-        pitch = clip(math.atan2(target_in_local_coords[2], target_in_local_coords[0]))
+        target_angle = math.atan2(target_in_local_coords[1], target_in_local_coords[0])
+        yaw = math.sin(target_angle)
+        pitch = -math.cos(target_angle)
         return SimpleControllerState(jump=True, yaw=yaw, pitch=pitch)
 
     def get_index(self, current_time):
@@ -39,7 +43,7 @@ class JumpingShot(BaseMechanic):
     def get_controls(self, car, game_packet) -> SimpleControllerState:
         self.controls = self.inputs[self.get_index(game_packet.game_info.seconds_elapsed)]
         if self.controls is None:
-            self.inputs[2] = self.get_flip_inputs(car)
+            self.inputs[2] = self.get_flip_inputs(car,game_packet)
             self.controls = self.inputs[2]
 
         self.finished = game_packet.game_info.seconds_elapsed > self.done_timer
