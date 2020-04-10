@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 current_path = Path(__file__).absolute().parent
 sys.path.insert(0, str(current_path.parent.parent))
 from typing import Optional
@@ -30,21 +31,21 @@ class JumpShotExercise(TrainingExercise):
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
-        central_location = np.array([randrange(-3000, 3000), randrange(-4000, 4000), randrange(200,300)])
+        central_location = np.array([randrange(-3000, 3000), randrange(-4000, 4000), randrange(200, 300)])
         ball_state = BallState(
-            Physics(
+            physics=Physics(
                 location=Vector3(central_location[0], central_location[1], central_location[2]),
-                velocity=Vector3(0, 0, 0)
+                velocity=Vector3(0, 0, 0),
+                angular_velocity=Vector3(0, 0, 0),
             )
         )
 
         car_direction = normalize(np.array([randrange(-100, 100), randrange(-100, 100), 0]))
-        offset = car_direction*randrange(120,200)
+        offset = car_direction * randrange(120, 200)
         car_position = central_location + offset
         car_position[2] = 17.01
         car_state = CarState(
             physics=Physics(
-                # rotation=Rotator(math.pi / 2, 0, 0),
                 rotation=Rotator(0, 0, 0),
                 location=Vector3(car_position[0], car_position[1], car_position[2]),
                 angular_velocity=Vector3(0, 0, 0),
@@ -53,6 +54,7 @@ class JumpShotExercise(TrainingExercise):
         )
 
         return GameState(ball=ball_state, cars={0: car_state})
+
 
 from util.matchcomms_grader import MatchcommsGrader
 
