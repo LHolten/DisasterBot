@@ -1,34 +1,31 @@
 import math
 import numpy as np
+
 from rlbot.agents.base_agent import SimpleControllerState
+
 from mechanic.base_mechanic import BaseMechanic
-from util.numerics import clip, sign
-from util.render_utils import render_car_text
-from util.generator_utils import initialize_generator
-from util.linear_algebra import normalize
-from skeleton.util.structure import GameData
+from util.linear_algebra import cross, normalize, dot
 
 PI = math.pi
 
 
 class JumpingShot(BaseMechanic):
-    def __init__(self, agent, target_loc, target_time, game_packet, rendering_enabled=False):
+    def __init__(self, agent, target_loc, target_dt, game_packet, rendering_enabled=False):
         super().__init__(agent, rendering_enabled=rendering_enabled)
         self.target = target_loc
         self.start_time = game_packet.game_info.seconds_elapsed
         self.inputs = [SimpleControllerState(jump=True), SimpleControllerState(jump=False), None]
-        delay = target_time - game_packet.game_info.seconds_elapsed
-        self.timers = [delay - (1 / 120) * 2, (1 / 120) * 2, 0.25]
-        self.done_timer = target_time + self.timers[2]
-        print(self.timers[0], self.timers[1], target_loc[2])
+        self.timers = [target_dt - (1 / 120) * 2, (1 / 120) * 2, 0.25]
+        self.done_timer = self.start_time + target_dt + self.timers[2]
 
     def get_flip_inputs(self, car, game_packet):
         # mechanic expects target's future coordinate so results are deviant in testing when just given ball's expired position
-        target_in_local_coords = (self.target - car.location).dot(car.rotation_matrix)
-        target_angle = math.atan2(target_in_local_coords[1], target_in_local_coords[0])
-        yaw = math.sin(target_angle)
-        pitch = -math.cos(target_angle)
-        return SimpleControllerState(jump=True, yaw=yaw, pitch=pitch)
+        front = car.rotation_matrix[:, 0]
+        world_left = cross(np.array([0, 0, 1]), front)
+        target_dir = normalize(self.target - car.location)
+        pitch = -dot(front, target_dir)
+        roll = dot(world_left, target_dir)
+        return SimpleControllerState(jump=True, roll=roll, pitch=pitch)
 
     def get_index(self, current_time):
         local_time = current_time - self.start_time
