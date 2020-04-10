@@ -12,19 +12,19 @@ PI = math.pi
 
 
 class JumpingShot(BaseMechanic):
-    def __init__(self, agent, target_loc, target_time, game_packet,rendering_enabled=False):
-        BaseMechanic.__init__(self, agent, rendering_enabled=rendering_enabled)
+    def __init__(self, agent, target_loc, target_time, game_packet, rendering_enabled=False):
+        super().__init__(agent, rendering_enabled=rendering_enabled)
         self.target = target_loc
         self.start_time = game_packet.game_info.seconds_elapsed
         self.inputs = [SimpleControllerState(jump=True), SimpleControllerState(jump=False), None]
-        delay = target_time - game_packet.game_packet.game_info.seconds_elapsed
+        delay = target_time - game_packet.game_info.seconds_elapsed
         self.timers = [delay - (1 / 120) * 3, (1 / 120) * 2, 0.25]
         self.done_timer = target_time + self.timers[2]
 
     def get_flip_inputs(self, car):
         target_in_local_coords = normalize((self.target - car.location).dot(car.rotation_matrix))
-        yaw = clip(math.atan2(target_in_local_coords.y, target_in_local_coords.x))
-        pitch = clip(math.atan2(target_in_local_coords.z, target_in_local_coords.x))
+        yaw = clip(math.atan2(target_in_local_coords[1], target_in_local_coords[0]))
+        pitch = clip(math.atan2(target_in_local_coords[2], target_in_local_coords[0]))
         return SimpleControllerState(jump=True, yaw=yaw, pitch=pitch)
 
     def get_index(self, current_time):
@@ -36,12 +36,12 @@ class JumpingShot(BaseMechanic):
         else:
             return 2
 
-    def get_controls(self, car,game_packet) -> SimpleControllerState:
+    def get_controls(self, car, game_packet) -> SimpleControllerState:
         self.controls = self.inputs[self.get_index(game_packet.game_info.seconds_elapsed)]
-        if self.controls == None:
+        if self.controls is None:
             self.inputs[2] = self.get_flip_inputs(car)
             self.controls = self.inputs[2]
 
-        self.done = game_packet.game_info.seconds_elapsed > self.done_timer
+        self.finished = game_packet.game_info.seconds_elapsed > self.done_timer
 
         return self.controls
