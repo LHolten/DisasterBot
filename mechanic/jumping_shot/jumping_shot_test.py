@@ -29,19 +29,27 @@ class RotationExercise(TrainingExercise):
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
         central_location = np.array([randrange(-3500, 3500), randrange(-4500, 4500), randrange(120, 300)])
-        ball_state = BallState(Physics(location=Vector3(central_location[0], central_location[1], central_location[2]),
-                                       velocity=Vector3(0, 0, 0)))
+        ball_state = BallState(
+            Physics(
+                location=Vector3(central_location[0], central_location[1], central_location[2]),
+                velocity=Vector3(0, 0, 0),
+            )
+        )
 
         car_direction = normalize(np.array([randrange(-100, 100), randrange(-100, 100), 0]))
         offset = car_direction * randrange(20, 120)
         car_position = central_location + offset
         car_position[2] = 17.01
-        car_state = CarState(jumped=False, double_jumped=False, physics=Physics(rotation=Rotator(math.pi / 2, 0, 0),
-                                                                                location=Vector3(
-                                                                                    [car_position[0], car_position[1],
-                                                                                     car_position[2]]),
-                                                                                angular_velocity=Vector3(0, 0, 0),
-                                                                                velocity=Vector3(0, 0, 0)))
+        car_state = CarState(
+            jumped=False,
+            double_jumped=False,
+            physics=Physics(
+                rotation=Rotator(math.pi / 2, 0, 0),
+                location=Vector3(car_position[0], car_position[1], car_position[2]),
+                angular_velocity=Vector3(0, 0, 0),
+                velocity=Vector3(0, 0, 0),
+            ),
+        )
 
         return GameState(ball=ball_state, cars={0: car_state})
 
