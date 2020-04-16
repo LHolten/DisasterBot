@@ -11,6 +11,7 @@ from action.shoot_at_goal import ShootAtGoal
 from policy.base_policy import BasePolicy
 from skeleton.util.structure import GameData
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic
+from util.team_utilities import kickoff_decider
 
 
 def get_ball_control(game_data):
@@ -54,7 +55,7 @@ class TournamentPolicy(BasePolicy):
 
     def get_action(self, game_data: GameData) -> BaseAction:
         ball_loc = game_data.ball.location
-        kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1
+        kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1 and kickoff_decider(game_data)
 
         if kickoff:
             return self.kickoff_action
