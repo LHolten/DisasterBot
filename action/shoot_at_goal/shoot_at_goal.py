@@ -22,7 +22,11 @@ class ShootAtGoal(BaseAction):
 
         target_loc, target_dt = get_ground_ball_intercept_state(game_data)
 
-        if target_loc[2] > 100 and self.jumpshot_valid(game_data, target_loc, target_dt) and self.jump_shot is None:
+        if (
+            target_loc[2] > 100
+            and self.jumpshot_valid(game_data, target_loc, target_dir, target_dt)
+            and self.jump_shot is None
+        ):
             self.jump_shot = JumpingShot(
                 self.agent, target_loc, target_dt - 0.1, game_data.game_tick_packet, self.rendering_enabled,
             )
@@ -45,14 +49,18 @@ class ShootAtGoal(BaseAction):
 
         return controls
 
-    def jumpshot_valid(self, game_data, target_loc, target_dt) -> bool:
+    def jumpshot_valid(self, game_data, target_loc, target_dir, target_dt) -> bool:
         temp_distance_limit = 120
         temp_time_limit = target_loc[2] / 300
         future_projection = game_data.my_car.location + game_data.my_car.velocity * target_dt
         difference = future_projection - target_loc
         difference[2] = 0
         if np.linalg.norm(difference) < temp_distance_limit and target_dt < temp_time_limit:
-            return True
+            ideal_position = target_loc + (target_dir * 120)
+            bad_position = target_loc - (target_dir * 120)
+
+            if np.linalg.norm(future_projection - ideal_position) < np.linalg.norm(future_projection - bad_position):
+                return True
         return False
 
     def is_valid(self, game_data):

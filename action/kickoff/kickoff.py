@@ -6,6 +6,7 @@ from mechanic.drive_navigate_boost import DriveNavigateBoost
 from mechanic.flip import Flip
 from util.generator_utils import initialize_generator
 from util.linear_algebra import norm, dot, normalize
+import numpy as np
 
 
 class Kickoff(BaseAction):
@@ -39,9 +40,13 @@ class Kickoff(BaseAction):
         while True:
             relative_ball = game_data.ball.location - game_data.my_car.location
 
-            if game_data.my_car.boost > 30 or norm(relative_ball) < 2500:
+            if game_data.my_car.boost > 15 or norm(relative_ball) < 2200:
+                if game_data.my_car.location[0] > game_data.ball.location[0]:
+                    offset = np.array([-150, 0, 0])
+                else:
+                    offset = np.array([150, 0, 0])
                 game_data = yield self.mechanic.get_controls(
-                    game_data.my_car, game_data.boost_pads, game_data.ball.location
+                    game_data.my_car, game_data.boost_pads, game_data.ball.location + offset
                 )
             else:
                 flip = Flip(self.agent, self.rendering_enabled)
