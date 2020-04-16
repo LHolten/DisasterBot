@@ -10,6 +10,7 @@ from action.shadow_ball import ShadowBall
 from action.shoot_at_goal import ShootAtGoal
 from policy.base_policy import BasePolicy
 from skeleton.util.structure import GameData
+from util.linear_algebra import norm
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic
 from util.team_utilities import kickoff_decider
 
@@ -55,20 +56,22 @@ class TournamentPolicy(BasePolicy):
 
     def get_action(self, game_data: GameData) -> BaseAction:
         ball_loc = game_data.ball.location
-        kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1 and kickoff_decider(game_data)
+        kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1
 
         if kickoff:
-            return self.kickoff_action
+            if kickoff_decider(game_data):
+                return self.kickoff_action
+            else:
+                return self.shadow
         else:
             own, team, opp = get_ball_control(game_data)
-            if own < team or own < opp:
+            if (
+                own < team
+                or (own < opp and team == 0)
+                or norm(game_data.own_goal.location - game_data.ball.location) < 3000
+            ):
                 if self.attack.finished:
                     self.attack = ShootAtGoal(self.agent, self.rendering_enabled)
                 return self.attack
             else:
-                return self.defend(game_data)
-
-    def defend(self, game_data):
-        if np.linalg.norm(game_data.own_goal.location - game_data.ball.location) < 3000:
-            return self.hit_ball
-        return self.shadow
+                return self.shadow

@@ -4,11 +4,9 @@ from pathlib import Path
 current_path = Path(__file__).absolute().parent
 sys.path.insert(0, str(current_path.parent.parent))
 from typing import Optional
-from random import randrange
 import numpy as np
 from util.linear_algebra import normalize
 
-import math
 from rlbot.training.training import Grade
 from rlbot.utils.game_state_util import (
     GameState,
@@ -17,7 +15,6 @@ from rlbot.utils.game_state_util import (
     Rotator,
     Vector3,
     CarState,
-    GameInfoState,
 )
 from rlbottraining.exercise_runner import run_module, ReloadPolicy
 from rlbottraining.match_configs import make_match_config_with_bots
@@ -31,7 +28,7 @@ class JumpShotExercise(TrainingExercise):
         return None
 
     def make_game_state(self, rng: SeededRandomNumberGenerator) -> GameState:
-        central_location = np.array([randrange(-3000, 3000), randrange(-4000, 4000), randrange(200, 300)])
+        central_location = np.array([rng.randrange(-3000, 3000), rng.randrange(-4000, 4000), rng.randrange(200, 300)])
         ball_state = BallState(
             physics=Physics(
                 location=Vector3(central_location[0], central_location[1], central_location[2]),
@@ -40,8 +37,8 @@ class JumpShotExercise(TrainingExercise):
             )
         )
 
-        car_direction = normalize(np.array([randrange(-100, 100), randrange(-100, 100), 0]))
-        offset = car_direction * randrange(120, 200)
+        car_direction = normalize(np.array([rng.randrange(-100, 100), rng.randrange(-100, 100), 0]))
+        offset = car_direction * rng.randrange(120, 200)
         car_position = central_location + offset
         car_position[2] = 17.01
         car_state = CarState(

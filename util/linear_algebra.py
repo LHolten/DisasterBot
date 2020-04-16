@@ -19,6 +19,12 @@ def normalize(vec: np.ndarray):
     return vec / max(norm(vec), 1e-8)
 
 
+def flatten(vec: np.ndarray):
+    new_vec = vec.copy()
+    new_vec[2] = 0
+    return new_vec
+
+
 def normalize_batch(vec: np.ndarray):
     return vec / np.maximum(np.linalg.norm(vec, axis=-1), 1e-8)
 
@@ -30,4 +36,8 @@ def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray):
 
 def optimal_intercept_vector(collider_location: np.ndarray, collider_velocity: np.ndarray, target_location: np.ndarray):
     """Provides vector for correcting an object's velocity vector towards the target vector"""
-    return normalize(normalize(collider_velocity) + normalize(collider_location - target_location))
+    target_dir = normalize(target_location - collider_location)
+    correct_vel = dot(collider_velocity, target_dir)
+    incorrect_vel = collider_velocity - correct_vel
+    extra_vel = math.sqrt(math.pow(6000, 2) - math.pow(norm(incorrect_vel), 2))
+    return target_dir * extra_vel - incorrect_vel

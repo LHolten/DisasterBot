@@ -8,6 +8,8 @@ from util.generator_utils import initialize_generator
 from util.linear_algebra import norm, dot, normalize
 import numpy as np
 
+from util.numerics import sign
+
 
 class Kickoff(BaseAction):
     def __init__(self, *args, **kwargs):
@@ -26,10 +28,7 @@ class Kickoff(BaseAction):
         ball_loc = game_data.ball.location
         kickoff = math.sqrt(ball_loc[0] ** 2 + ball_loc[1] ** 2) < 1
 
-        if not kickoff:
-            self.finished = True
-        else:
-            self.finished = False
+        self.finished = not kickoff
 
         return self.controls
 
@@ -41,10 +40,7 @@ class Kickoff(BaseAction):
             relative_ball = game_data.ball.location - game_data.my_car.location
 
             if game_data.my_car.boost > 15 or norm(relative_ball) < 2200:
-                if game_data.my_car.location[0] > game_data.ball.location[0]:
-                    offset = np.array([-150, 0, 0])
-                else:
-                    offset = np.array([150, 0, 0])
+                offset = np.array([150, 0, 0]) * sign(relative_ball[0])
                 game_data = yield self.mechanic.get_controls(
                     game_data.my_car, game_data.boost_pads, game_data.ball.location + offset
                 )
