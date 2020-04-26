@@ -37,7 +37,7 @@ def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray):
 def optimal_intercept_vector(collider_location: np.ndarray, collider_velocity: np.ndarray, target_location: np.ndarray):
     """Provides vector for correcting an object's velocity vector towards the target vector"""
     target_dir = normalize(target_location - collider_location)
-    correct_vel = dot(collider_velocity, target_dir)
+    correct_vel = dot(collider_velocity, target_dir) * target_dir
     incorrect_vel = collider_velocity - correct_vel
     extra_vel = math.sqrt(math.pow(6000, 2) - math.pow(norm(incorrect_vel), 2))
     return target_dir * extra_vel - incorrect_vel
