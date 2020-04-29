@@ -1,5 +1,5 @@
 from numba import jit, f8, guvectorize
-from numba.core.types import UniTuple
+from numba.types import UniTuple
 
 from util.physics.drive_1d_solutions import (
     State,
