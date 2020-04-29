@@ -6,7 +6,7 @@ from mechanic.jumping_shot import JumpingShot
 from skeleton.util.structure import GameData
 from skeleton.util.structure.dtypes import dtype_full_boost
 from util.ball_utils import get_ground_ball_intercept_state
-from util.linear_algebra import norm, optimal_intercept_vector, flatten
+from util.linear_algebra import norm, optimal_intercept_vector, flatten, dot
 import numpy as np
 
 
@@ -18,12 +18,14 @@ class ShootAtGoal(BaseAction):
 
     def get_controls(self, game_data: GameData) -> SimpleControllerState:
         target_dir = optimal_intercept_vector(
-            flatten(game_data.ball.location), flatten(game_data.ball.velocity), flatten(game_data.opp_goal.location)
+            flatten(game_data.ball.location),
+            flatten(game_data.ball.velocity),
+            flatten(game_data.opp_goal.location - game_data.opp_goal.direction * 1000),
         )
 
         target_loc, target_dt = get_ground_ball_intercept_state(game_data)
 
-        if self.jumpshot_valid(game_data, target_loc, target_dt) and self.jump_shot is None:
+        if self.jumpshot_valid(game_data, target_loc, target_dt, target_dir) and self.jump_shot is None:
             self.jump_shot = JumpingShot(
                 self.agent, target_loc, target_dt - 0.1, game_data.game_tick_packet, self.rendering_enabled,
             )
@@ -48,12 +50,16 @@ class ShootAtGoal(BaseAction):
 
         return controls
 
-    def jumpshot_valid(self, game_data, target_loc, target_dt) -> bool:
+    def jumpshot_valid(self, game_data, target_loc, target_dt, target_dir) -> bool:
         best_dt = target_loc[2] / 300
         future_projection = game_data.my_car.location + game_data.my_car.velocity * target_dt
         difference = future_projection - target_loc
         difference[2] = 0
-        return norm(difference) < 110 and abs(target_dt - best_dt) < 0.05
+        return (
+            norm(difference) < 110
+            and abs(target_dt - best_dt) < 0.05
+            and dot(target_loc - game_data.my_car.location, target_dir) > 0
+        )
 
     def is_valid(self, game_data):
         return True

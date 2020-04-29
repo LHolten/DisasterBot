@@ -22,9 +22,13 @@ def get_ball_control(game_data: GameData):
     )
     team_sign = sign(game_data.team)
 
-    def is_active_team(teammate):
+    def is_defending_team(teammate):
         teammate_location = teammate["physics"]["location"].astype(float)
         return (game_data.ball.location[1] - teammate_location[1]) * team_sign < 0
+
+    def is_attacking_team(teammate):
+        teammate_velocity = teammate["physics"]["velocity"].astype(float)
+        return is_defending_team(teammate) and teammate_velocity[1] * team_sign < 0
 
     def time_to_ball(player):
         return state_at_distance_heuristic(
@@ -33,13 +37,14 @@ def get_ball_control(game_data: GameData):
             player["boost"].astype(float),
         )[0]
 
-    teammates = list(filter(is_active_team, game_data.teammates))
+    attacking_teammates = list(filter(is_attacking_team, game_data.teammates))
+    defending_teammates = list(filter(is_defending_team, game_data.teammates))
 
-    teammate_time = min([*map(time_to_ball, teammates), np.inf])
-    teammate_max = max([*map(time_to_ball, teammates), 0])
+    teammate_time = min([*map(time_to_ball, attacking_teammates), np.inf])
+    teammate_max = max([*map(time_to_ball, attacking_teammates), 0])
     opponent_time = min([*map(time_to_ball, game_data.opponents), np.inf])
 
-    return own_time, teammate_time, opponent_time, len(teammates), teammate_max
+    return own_time, teammate_time, opponent_time, len(defending_teammates), teammate_max
 
 
 class TournamentPolicy(BasePolicy):
@@ -62,14 +67,14 @@ class TournamentPolicy(BasePolicy):
             else:
                 return self.shadow
         else:
-            own, team, opp, num_active, team_max = get_ball_control(game_data)
-            if own == team and (
-                num_active > 1 or own < opp or norm(game_data.own_goal.location - game_data.ball.location) < 3000
+            own, team, opp, num_defenders, team_max = get_ball_control(game_data)
+            if own <= team and (
+                num_defenders > 1 or own < opp or norm(game_data.own_goal.location - game_data.ball.location) < 3000
             ):
                 if self.attack.finished:
                     self.attack = ShootAtGoal(self.agent, self.rendering_enabled)
                 return self.attack
             else:
-                if num_active > 2 and own == team_max:
+                if num_defenders > 2 and own == team_max:
                     return self.shadow2
                 return self.shadow
