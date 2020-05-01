@@ -12,7 +12,7 @@ from policy.base_policy import BasePolicy
 from skeleton.util.structure import GameData
 from util.linear_algebra import norm, dot
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic
-from util.team_utilities import kickoff_decider, calc_target_dir
+from util.kickoff_utilities import kickoff_decider, calc_target_dir
 
 
 def get_ball_control(game_data: GameData):

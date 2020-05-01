@@ -23,8 +23,8 @@ def get_kickoff_position(position: np.array):
 
 
 def calc_target_dir(game_data: GameData, ball_location, ball_velocity):
-    own_goal = game_data.own_goal.location
-    opp_goal = game_data.opp_goal.location
+    own_goal = game_data.own_goal.location - normalize(game_data.own_goal.direction) * 500
+    opp_goal = game_data.opp_goal.location - normalize(game_data.opp_goal.direction) * 500
 
     relative_own = ball_location - own_goal
     relative_opp = opp_goal - ball_location

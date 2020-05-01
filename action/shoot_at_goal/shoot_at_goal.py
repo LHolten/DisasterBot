@@ -9,7 +9,7 @@ from util.ball_utils import get_ground_ball_intercept_state
 from util.linear_algebra import norm, flatten, dot
 import numpy as np
 
-from util.team_utilities import calc_target_dir
+from util.kickoff_utilities import calc_target_dir
 
 
 class ShootAtGoal(BaseAction):
@@ -53,7 +53,7 @@ class ShootAtGoal(BaseAction):
         difference = future_projection - target_loc
         difference[2] = 0
         return (
-            norm(difference) < 120
+            norm(difference) < 150
             and target_dt - best_dt < 0.1
             and dot(target_loc - game_data.my_car.location, target_dir) > 0
         )
