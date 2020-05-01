@@ -10,25 +10,24 @@ from action.shadow_ball import ShadowBall
 from action.shoot_at_goal import ShootAtGoal
 from policy.base_policy import BasePolicy
 from skeleton.util.structure import GameData
-from util.linear_algebra import norm
-from util.numerics import sign
+from util.linear_algebra import norm, dot
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic
-from util.team_utilities import kickoff_decider
+from util.team_utilities import kickoff_decider, calc_target_dir
 
 
 def get_ball_control(game_data: GameData):
     own_time, _, _ = state_at_distance_heuristic(
         game_data.my_car.location - game_data.ball.location, game_data.my_car.velocity, game_data.my_car.boost
     )
-    team_sign = sign(game_data.team)
+    target_dir = calc_target_dir(game_data, game_data.ball.location, game_data.ball.velocity)
 
     def is_defending_team(teammate):
         teammate_location = teammate["physics"]["location"].astype(float)
-        return (game_data.ball.location[1] - teammate_location[1]) * team_sign < 0
+        return dot((game_data.ball.location - teammate_location), target_dir) > 0
 
     def is_attacking_team(teammate):
         teammate_velocity = teammate["physics"]["velocity"].astype(float)
-        return is_defending_team(teammate) and teammate_velocity[1] * team_sign < 0
+        return is_defending_team(teammate) and dot(teammate_velocity, target_dir) > 0
 
     def time_to_ball(player):
         return state_at_distance_heuristic(
@@ -53,8 +52,8 @@ class TournamentPolicy(BasePolicy):
         self.kickoff_action = Kickoff(agent, rendering_enabled)
         self.attack = ShootAtGoal(agent, rendering_enabled)
         self.hit_ball = HitGroundBall(agent, rendering_enabled)
-        self.shadow = ShadowBall(agent, rendering_enabled, 1500)
-        self.shadow2 = ShadowBall(agent, rendering_enabled, 3000)
+        self.shadow = ShadowBall(agent, rendering_enabled, 2000)
+        self.shadow2 = ShadowBall(agent, rendering_enabled, 4000)
         self.collect_boost = CollectBoost(agent, rendering_enabled)
 
     def get_action(self, game_data: GameData) -> BaseAction:
@@ -68,8 +67,10 @@ class TournamentPolicy(BasePolicy):
                 return self.shadow
         else:
             own, team, opp, num_defenders, team_max = get_ball_control(game_data)
-            if own <= team and (
-                num_defenders > 1 or own < opp or norm(game_data.own_goal.location - game_data.ball.location) < 3000
+            if (
+                own <= team
+                and (num_defenders > 1 or own < opp)
+                or norm(game_data.own_goal.location - game_data.ball.location) < 3000
             ):
                 if self.attack.finished:
                     self.attack = ShootAtGoal(self.agent, self.rendering_enabled)

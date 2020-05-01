@@ -6,8 +6,10 @@ from mechanic.jumping_shot import JumpingShot
 from skeleton.util.structure import GameData
 from skeleton.util.structure.dtypes import dtype_full_boost
 from util.ball_utils import get_ground_ball_intercept_state
-from util.linear_algebra import norm, optimal_intercept_vector, flatten, dot
+from util.linear_algebra import norm, flatten, dot
 import numpy as np
+
+from util.team_utilities import calc_target_dir
 
 
 class ShootAtGoal(BaseAction):
@@ -17,13 +19,8 @@ class ShootAtGoal(BaseAction):
         self.jump_shot = None
 
     def get_controls(self, game_data: GameData) -> SimpleControllerState:
-        target_dir = optimal_intercept_vector(
-            flatten(game_data.ball.location),
-            flatten(game_data.ball.velocity),
-            flatten(game_data.opp_goal.location - game_data.opp_goal.direction * 1000),
-        )
-
-        target_loc, target_dt = get_ground_ball_intercept_state(game_data)
+        target_loc, target_dt, target_vel = get_ground_ball_intercept_state(game_data)
+        target_dir = calc_target_dir(game_data, target_loc, target_vel)
 
         if self.jumpshot_valid(game_data, target_loc, target_dt, target_dir) and self.jump_shot is None:
             self.jump_shot = JumpingShot(
@@ -51,13 +48,13 @@ class ShootAtGoal(BaseAction):
         return controls
 
     def jumpshot_valid(self, game_data, target_loc, target_dt, target_dir) -> bool:
-        best_dt = target_loc[2] / 300
+        best_dt = (target_loc[2] - game_data.my_car.location[2]) / 300
         future_projection = game_data.my_car.location + game_data.my_car.velocity * target_dt
         difference = future_projection - target_loc
         difference[2] = 0
         return (
-            norm(difference) < 110
-            and abs(target_dt - best_dt) < 0.05
+            norm(difference) < 120
+            and target_dt - best_dt < 0.1
             and dot(target_loc - game_data.my_car.location, target_dir) > 0
         )
 

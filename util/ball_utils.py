@@ -43,13 +43,15 @@ def get_ground_ball_intercept_state(game_data, box_location=None):
     filtered_prediction = ball_prediction[reachable]
 
     target_loc = game_data.ball_prediction[-1]["physics"]["location"].astype(np.float64)
+    target_vel = game_data.ball_prediction[-1]["physics"]["velocity"].astype(np.float64)
     target_dt = game_data.ball_prediction[-1]["game_seconds"] - game_data.time
 
     if len(filtered_prediction) > 0:
         target_loc = filtered_prediction[0]["physics"]["location"].astype(np.float64)
+        target_vel = filtered_prediction[0]["physics"]["velocity"].astype(np.float64)
         target_dt = filtered_prediction[0]["game_seconds"] - game_data.time
         target_loc = box_ball_location_on_collision(
             target_loc, box_location, car_rot, car.hitbox_corner, car.hitbox_offset, ball.radius,
         )
 
-    return target_loc, target_dt
+    return target_loc, target_dt, target_vel

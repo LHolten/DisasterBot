@@ -1,7 +1,8 @@
 import heapq
 from collections import namedtuple
 
-from numba import njit, from_dtype, f8
+from numba import njit, from_dtype, f8, i8
+from numba.types import Tuple, List, NamedTuple
 
 from skeleton.util.structure.dtypes import dtype_full_boost
 from util.physics.drive_1d_heuristic import state_at_distance_heuristic, state_at_distance_heuristic_vectorized
@@ -10,12 +11,47 @@ import numpy as np
 
 
 Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
-
-
 full_boost_type = from_dtype(dtype_full_boost)
 
 
-@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[:]), cache=True)
+@njit((full_boost_type[:], f8[:], i8, List(NamedTuple((f8, f8[:], f8, i8, i8), Node))), cache=True)
+def first_target(boost_pads: np.ndarray, target: np.ndarray, i, nodes):
+    path = nodes[i]
+
+    prev = nodes[path.prev]
+    while prev.i != -2:
+        path = prev
+        prev = nodes[path.prev]
+
+    if path.i == -1:
+        return target
+    return boost_pads[path.i]["location"][::1]
+
+
+@njit((full_boost_type[:], f8[:], f8[:], i8, List(NamedTuple((f8, f8[:], f8, i8, i8), Node))), cache=True)
+def path_length(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, i, nodes):
+    path = nodes[i]
+
+    length = 0
+
+    location = target
+
+    prev = nodes[path.prev]
+    while prev.i != -2:
+        prev_location = boost_pads[prev.i]["location"]
+        length += np.linalg.norm(location - prev_location)
+        path = prev
+        location = prev_location
+
+        prev = nodes[path.prev]
+
+    prev_location = start
+    length += np.linalg.norm(location - prev_location)
+
+    return length
+
+
+@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[::1]), cache=True)
 def find_fastest_path(
     boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_dir: np.ndarray
 ):
@@ -35,7 +71,10 @@ def find_fastest_path(
 
         if state.i == -1:
             if np.dot(state.vel, target_dir) >= 0.0:
-                return state, nodes
+                return (
+                    first_target(boost_pads, target, index, nodes),
+                    path_length(boost_pads, start, target, index, nodes),
+                )
             continue
 
         location = start
@@ -65,19 +104,6 @@ def find_fastest_path(
 
             heapq.heappush(queue, (total_time, len(nodes)))
             nodes.append(Node(time, vel, boost, i, index))
-
-
-def first_target(boost_pads: np.ndarray, target: np.ndarray, route):
-    path, nodes = route
-
-    prev = nodes[path.prev]
-    while prev.i != -2:
-        path = prev
-        prev = nodes[path.prev]
-
-    if path.i == -1:
-        return target
-    return boost_pads[path.i]["location"]
 
 
 def optional_boost_target(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float):
@@ -140,9 +166,7 @@ def main():
     target_dir = np.array([0.0, 0.0, 0.0])
 
     def test_function():
-        return first_target(
-            boost_pads, target_loc, find_fastest_path(boost_pads, my_loc, target_loc, vel, 50.0, target_dir)
-        )
+        return find_fastest_path(boost_pads, my_loc, target_loc, vel, 50.0, target_dir)
 
     print(test_function())
 

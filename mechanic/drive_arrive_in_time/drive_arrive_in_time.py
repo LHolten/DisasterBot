@@ -24,7 +24,7 @@ class DriveArriveInTime(BaseMechanic):
         super().__init__(*args, **kwargs)
         self.turn_mechanic = DriveTurnFaceTarget(self.agent, self.rendering_enabled)
 
-    def get_controls(self, car, target_loc, time) -> SimpleControllerState:
+    def get_controls(self, car, distance, target_loc, time) -> SimpleControllerState:
 
         turn_mechanic_controls = self.turn_mechanic.get_controls(car, target_loc)
         self.controls.steer = turn_mechanic_controls.steer
@@ -35,9 +35,7 @@ class DriveArriveInTime(BaseMechanic):
         if delta_time == 0:
             delta_time = 1 / 60
 
-        target_in_local_coords = (target_loc - car.location).dot(car.rotation_matrix)
         car_forward_velocity = car.velocity.dot(car.rotation_matrix[:, 0])
-        distance = np.linalg.norm(target_in_local_coords)
 
         car_ang_vel_local_coords = np.dot(car.angular_velocity, car.rotation_matrix)
 

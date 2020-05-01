@@ -13,12 +13,13 @@ class ShadowBall(BaseAction):
         self.distance = distance
 
     def get_controls(self, game_data: GameData) -> SimpleControllerState:
-        dt = norm(game_data.own_goal.location - game_data.ball.location) / 6000
+        dt = norm(game_data.own_goal.location - game_data.ball.location) / 3000
         ball_location = game_data.ball_prediction[int(60 * dt)]["physics"]["location"]
+        ball_velocity = game_data.ball_prediction[int(60 * dt)]["physics"]["velocity"]
         target_loc = normalize(game_data.own_goal.location - ball_location) * self.distance + ball_location
         up = game_data.my_car.rotation_matrix[:, 2]
         target_loc = target_loc - dot(target_loc - game_data.my_car.location, up) * up
-        target_dir = game_data.ball.velocity - dot(game_data.ball.velocity, up) * up
+        target_dir = ball_velocity.astype(float)
 
         controls = self.mechanic.get_controls(game_data.my_car, game_data.boost_pads, target_loc, dt, target_dir)
 

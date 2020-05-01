@@ -4,7 +4,7 @@ import numpy as np
 from rlbot.agents.base_agent import SimpleControllerState
 
 from mechanic.base_mechanic import BaseMechanic
-from util.linear_algebra import cross, normalize, dot
+from util.linear_algebra import cross, normalize, dot, flatten
 
 PI = math.pi
 
@@ -20,9 +20,9 @@ class JumpingShot(BaseMechanic):
 
     def get_flip_inputs(self, car, game_packet):
         # mechanic expects target's future coordinate so results are deviant in testing when just given ball's expired position
-        front = car.rotation_matrix[:, 0]
+        front = normalize(flatten(car.rotation_matrix[:, 0]))
         world_left = cross(np.array([0, 0, 1]), front)
-        target_dir = normalize(self.target - car.location)
+        target_dir = normalize(flatten(self.target - car.location))
         pitch = -dot(front, target_dir)
         roll = dot(world_left, target_dir)
         return SimpleControllerState(jump=True, roll=roll, pitch=pitch)
