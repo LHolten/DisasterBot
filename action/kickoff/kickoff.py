@@ -2,10 +2,12 @@ import math
 from rlbot.agents.base_agent import SimpleControllerState
 from action.base_action import BaseAction
 
-from mechanic.drive_navigate_boost import DriveNavigateBoost
+from mechanic.drive_turn_face_target import DriveTurnFaceTarget
 from mechanic.flip import Flip
 from util.generator_utils import initialize_generator
 from util.linear_algebra import norm, dot, normalize
+from util.kickoff_utilities import kickoff_decider
+from util.kickoff_utilities import get_kickoff_position
 import numpy as np
 
 from util.numerics import sign
@@ -14,9 +16,10 @@ from util.numerics import sign
 class Kickoff(BaseAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mechanic = DriveNavigateBoost(self.agent, self.rendering_enabled)
+        self.mechanic = DriveTurnFaceTarget(self.agent, self.rendering_enabled)
         self.flip = Flip(self.agent, self.rendering_enabled)
         self.kickoff = self.kickoff_generator()
+        self.kickoff_type = 2
 
     def get_controls(self, game_data) -> SimpleControllerState:
         relative_ball = game_data.ball.location - game_data.my_car.location
@@ -37,17 +40,40 @@ class Kickoff(BaseAction):
         game_data = yield
 
         while True:
-            relative_ball = game_data.ball.location - game_data.my_car.location
+            if self.agent.game_data.kickoff_pause:
+                self.kickoff_type = get_kickoff_position(self.agent.game_data.my_car.location)
 
-            if game_data.my_car.boost > 15 or norm(relative_ball) < 2200:
-                offset = np.array([150, 0, 0]) * sign(relative_ball[0])
-                game_data = yield self.mechanic.get_controls(
-                    game_data.my_car, game_data.boost_pads, game_data.ball.location + offset
-                )
-            else:
-                flip = Flip(self.agent, self.rendering_enabled)
-                while not flip.finished:
-                    controls = flip.get_controls(game_data.my_car, relative_ball)
-                    if dot(game_data.my_car.rotation_matrix[:, 0], normalize(relative_ball)) > 0.5:
-                        controls.boost = True
+            if self.kickoff_type == 0:  # wide kickoff
+
+                relative_ball = game_data.ball.location - game_data.my_car.location
+
+                if game_data.my_car.boost > 15 or norm(relative_ball) < 2200:
+                    offset = np.array([100, 0, 0]) * sign(relative_ball[0])
+                    controls = self.mechanic.get_controls(game_data.my_car, game_data.ball.location + offset)
+                    controls.throttle = 1
+                    controls.boost = True
                     game_data = yield controls
+                else:
+                    flip = Flip(self.agent, self.rendering_enabled)
+                    while not flip.finished:
+                        controls = flip.get_controls(game_data.my_car, relative_ball)
+                        if dot(game_data.my_car.rotation_matrix[:, 0], normalize(relative_ball)) > 0.5:
+                            controls.boost = True
+                        game_data = yield controls
+
+            else:
+                relative_ball = game_data.ball.location - game_data.my_car.location
+
+                if game_data.my_car.boost > 15 or norm(relative_ball) < 2200:
+                    offset = np.array([50, 0, 0]) * sign(relative_ball[0])
+                    controls = self.mechanic.get_controls(game_data.my_car, game_data.ball.location + offset)
+                    controls.throttle = 1
+                    controls.boost = True
+                    game_data = yield controls
+                else:
+                    flip = Flip(self.agent, self.rendering_enabled)
+                    while not flip.finished:
+                        controls = flip.get_controls(game_data.my_car, relative_ball)
+                        if dot(game_data.my_car.rotation_matrix[:, 0], normalize(relative_ball)) > 0.5:
+                            controls.boost = True
+                        game_data = yield controls

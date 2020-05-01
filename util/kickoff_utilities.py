@@ -12,6 +12,16 @@ def kickoff_decider(game_data: GameData) -> bool:
     return True
 
 
+def get_kickoff_position(position: np.array):
+    # kickoff_locations = [[2048, 2560], [256, 3848], [0, 4608]]
+    if abs(position[0]) >= 300:
+        return 0  # wide diagonal
+    elif abs(position[0]) > 5:
+        return 1  # short diagonal
+    else:
+        return 2  # middle
+
+
 def calc_target_dir(game_data: GameData, ball_location, ball_velocity):
     own_goal = game_data.own_goal.location
     opp_goal = game_data.opp_goal.location
