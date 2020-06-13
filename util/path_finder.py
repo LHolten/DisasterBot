@@ -14,7 +14,7 @@ Node = namedtuple("Node", ["time", "vel", "boost", "i", "prev"])
 full_boost_type = from_dtype(dtype_full_boost)
 
 
-@njit((full_boost_type[:], f8[:], i8, List(NamedTuple((f8, f8[:], f8, i8, i8), Node))), cache=True)
+@njit((full_boost_type[:], f8[:], i8, List(NamedTuple((f8, f8[::1], f8, i8, i8), Node))), cache=True)
 def first_target(boost_pads: np.ndarray, target: np.ndarray, i, nodes):
     path = nodes[i]
 
@@ -28,7 +28,7 @@ def first_target(boost_pads: np.ndarray, target: np.ndarray, i, nodes):
     return boost_pads[path.i]["location"][::1]
 
 
-@njit((full_boost_type[:], f8[:], f8[:], i8, List(NamedTuple((f8, f8[:], f8, i8, i8), Node))), cache=True)
+@njit((full_boost_type[:], f8[:], f8[:], i8, List(NamedTuple((f8, f8[::1], f8, i8, i8), Node))), cache=True)
 def path_length(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, i, nodes):
     path = nodes[i]
 
@@ -51,16 +51,19 @@ def path_length(boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, i
     return length
 
 
-@njit((full_boost_type[:], f8[:], f8[:], f8[:], f8, f8[::1]), cache=True)
+@njit((full_boost_type[:], f8[:], f8[:], f8[::1], f8, f8[::1]), cache=True)
 def find_fastest_path(
     boost_pads: np.ndarray, start: np.ndarray, target: np.ndarray, vel: np.ndarray, boost: float, target_dir: np.ndarray
 ):
-    queue = [(0.0, 0)]
+    time_end = state_at_distance_heuristic(target - start, vel, boost)[0]
+    queue = [(time_end, 0)]
     nodes = [Node(0.0, vel, boost, -2, 0)]
 
     fix = True
+    if np.dot(target - start, target_dir) >= 0 and not np.all(start == target):
+        fix = False
     for pad in boost_pads:
-        if np.dot(target - pad["location"], target_dir) >= 0:
+        if np.dot(target - pad["location"], target_dir) >= 0 and not np.all(pad["location"] == target):
             fix = False
     if fix:
         target_dir = np.array([0.0, 0.0, 0.0])
@@ -82,27 +85,29 @@ def find_fastest_path(
             location = boost_pads[state.i]["location"]
 
         for i in range(-1, boost_pads.shape[0]):
-            if i == state.i:
-                continue
-
             pad_location = target
             if i != -1:
                 pad_location = boost_pads[i]["location"]
 
+            if np.all(pad_location == location):
+                continue
+
             delta_time, vel, boost = state_at_distance_heuristic(pad_location - location, state.vel, state.boost)
             time = state.time + delta_time
 
+            delta_time_end = 0.0
             if i != -1:
-                pad_time = 10 if boost_pads[i]["is_full_boost"] else 4
+                pad_time = 10.0 if boost_pads[i]["is_full_boost"] else 4.0
 
                 if boost_pads[i]["is_active"] or boost_pads[i]["timer"] + time >= pad_time:
-                    pad_boost = 100 if boost_pads[i]["is_full_boost"] else 12
-                    boost = min(boost + pad_boost, 100)
+                    pad_boost = 100.0 if boost_pads[i]["is_full_boost"] else 12.0
+                    boost = min(boost + pad_boost, 100.0)
 
-            delta_time_end, vel_end, boost_end = state_at_distance_heuristic(target - pad_location, vel, boost)
-            total_time = time + delta_time_end
+                delta_time_end = state_at_distance_heuristic(target - pad_location, vel, boost)[0]
 
-            heapq.heappush(queue, (total_time, len(nodes)))
+            time_end = time + delta_time_end
+
+            heapq.heappush(queue, (time_end, len(nodes)))
             nodes.append(Node(time, vel, boost, i, index))
 
 
@@ -146,37 +151,36 @@ def main():
     """Testing for errors and performance"""
 
     from timeit import timeit
-    from rlbot.utils.structures.game_data_struct import GameTickPacket
-    from skeleton.test.skeleton_agent_test import SkeletonAgentTest, MAX_BOOSTS
+    from skeleton.test.skeleton_agent_test import SkeletonAgentTest
 
     agent = SkeletonAgentTest()
-    game_tick_packet = GameTickPacket()
-    game_tick_packet.num_boost = MAX_BOOSTS
     agent.initialize_agent()
 
-    boost_pads = agent.game_data.boost_pads
+    boost_pads = agent.game_data.boost_pads[:5]
 
     boost_pads["timer"] = 0
-    boost_pads["is_active"] = True
-    boost_pads["location"] = np.random.random(boost_pads["location"].shape) * 4000
-
-    my_loc = np.array([150.0, -3500.0, 20.0])
-    target_loc = np.array([150.0, 3500.0, 20.0])
-    vel = np.array([1000.0, 0.0, 0.0])
-    target_dir = np.array([0.0, 0.0, 0.0])
 
     def test_function():
+        boost_pads["location"] = np.random.rand(*boost_pads["location"].shape)
+        boost_pads["is_active"] = np.random.rand(*boost_pads["is_active"].shape) > 0.5
+        boost_pads["is_full_boost"] = np.random.rand(*boost_pads["is_full_boost"].shape) > 0.5
+
+        my_loc = boost_pads["location"][3]
+        target_loc = boost_pads["location"][4]
+        vel = np.random.rand(3) / 1000
+        target_dir = np.array([0, 1.0, 0])
+        print(boost_pads, my_loc, target_loc, vel, target_dir)
         return find_fastest_path(boost_pads, my_loc, target_loc, vel, 50.0, target_dir)
 
     print(test_function())
 
-    def test_function():
-        return optional_boost_target(boost_pads, my_loc, target_loc, vel, 50)
-
-    print(test_function())
+    # def test_function():
+    #     return optional_boost_target(boost_pads, my_loc, target_loc, vel, 50)
+    #
+    # print(test_function())
 
     fps = 120
-    n_times = 100
+    n_times = 100000
     time_taken = timeit(test_function, number=n_times)
     percentage = round(time_taken * fps / n_times * 100, 5)
 

@@ -95,7 +95,7 @@ def state_at_distance(distance: float, initial_velocity: float, boost_amount: fl
     state = state_distance_step_range_0_1400(state)
     state = state_distance_step_range_1400_2300(state)
 
-    return state.time + state.dist / state.vel, state.vel, state.boost
+    return state.time + state.dist / max(state.vel, 1e-9), state.vel, state.boost
 
 
 @guvectorize(["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])"], "(n), (n), (n) -> (n), (n), (n)", nopython=True)

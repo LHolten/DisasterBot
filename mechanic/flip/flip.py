@@ -11,7 +11,6 @@ from util.linear_algebra import cross, dot, normalize
 class Flip(BaseMechanic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.flipped = False
         self.flip = self.flip_generator()
 
     def get_controls(self, car: Player, target_dir) -> SimpleControllerState:
